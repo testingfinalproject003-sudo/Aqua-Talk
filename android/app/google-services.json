@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "272629412677",
+    "project_id": "aqua-talk-f795d",
+    "storage_bucket": "aqua-talk-f795d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:272629412677:android:3ad9012a04aad57752442c",
+        "android_client_info": {
+          "package_name": "com.example.aqua_talk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBx6_TKrsp1xHjNkJX0d0a7DyN-XTXskY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
