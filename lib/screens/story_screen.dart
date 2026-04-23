@@ -1,4 +1,5 @@
 import 'dart:ui';
+// import 'package:aqua_talk/widgets/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -158,9 +159,9 @@ class _StoryScreenState extends State<StoryScreen> {
           ),
         ],
       ),
-      title: const Text("My Status", style: TextStyle(fontWeight: FontWeight.bold, color: primaryTeal)),
-      subtitle: const Text("Tap to add status update", style: TextStyle(color: Colors.black54)),
-      onTap: () => _pickStory(context),
+      
+     
+     
     );
   }
 

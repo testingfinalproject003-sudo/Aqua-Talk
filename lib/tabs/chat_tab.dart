@@ -71,38 +71,7 @@ class _ChatTabState extends State<ChatTab> {
           ),
         ),
 
-        /// ================== 2. STORIES (HORIZONTALLY) ==================
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: 8,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF004D40), width: 2),
-                    ),
-                    child: CircleAvatar(
-                      radius: 28,
-                      backgroundImage: NetworkImage("https://i.pravatar.cc/150?u=$i"),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    "User $i",
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF46A59C)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+       
 
         /// ✅ ================== 3. FILTER BUTTONS (Ab Stories ke neechy) ==================
         Padding(

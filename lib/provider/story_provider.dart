@@ -1,49 +1,28 @@
 import 'package:flutter/material.dart';
-// import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // FirebaseAuth zaroori hai userId ke liye
 import '../models/story_model.dart';
 
-
 class StoryProvider with ChangeNotifier {
-  /// Dummy stories (API/Firebase ki jagah)
-  final List<StoryModel> _stories = [
-    StoryModel(
-      
-      userName: "Ali",
-      image: "https://picsum.photos/400",
-      time: DateTime.now(),
-    ),
-    StoryModel(
-      userName: "Sara",
-      image: "https://picsum.photos/401",
-      time: DateTime.now(),
-    ),
-  ];
+  final List<StoryModel> _stories = [];
 
   List<StoryModel> get stories => _stories;
 
   /// Add new story
-  void addStory(String path) {
+  void addStory(String path, {bool isVideo = false}) {
+    // Firebase se current user ki details lein
+    final user = FirebaseAuth.instance.currentUser;
+
     _stories.insert(
       0,
       StoryModel(
-        userName: "You",
         image: path,
-        time: DateTime.now(),
+        userName: user?.displayName ?? "You", // Agar name nahi hai toh "You"
+        userId: user?.uid ?? "default_id",   // ✅ Error fix: userId provide kar di
+        time: DateTime.now(),                // ✅ Error fix: time provide kar diya
+        isVideo: isVideo,
       ),
     );
 
     notifyListeners();
   }
-
-  // ================== FIREBASE READY ==================
-
-  // import 'package:cloud_firestore/cloud_firestore.dart';
-
-  // Future<void> uploadStory(String imageUrl) async {
-  //   await FirebaseFirestore.instance.collection("stories").add({
-  //     "user": "You",
-  //     "image": imageUrl,
-  //     "time": DateTime.now(),
-  //   });
-  // }
 }
