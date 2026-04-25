@@ -46,16 +46,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.dark;
 
-  void toggleTheme(ThemeMode mode) {
-    setState(() {
-      _themeMode = mode;
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return MaterialApp(
       title: 'Aqua Talk',
       debugShowCheckedModeBanner: false,
@@ -88,7 +84,7 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
 
-      themeMode: _themeMode,
+      themeMode: theme.isDark ? ThemeMode.dark : ThemeMode.light,
       
       // 🔥 The logic: First show Splash, then decide Home or Login
       home: const AuthWrapper(), 

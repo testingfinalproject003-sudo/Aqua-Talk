@@ -26,14 +26,14 @@ class _SettingsTabState extends State<SettingsTab> {
     final theme = context.watch<ThemeProvider>();
 
     // ✅ Dynamic Colors based on theme
-    final Color bgColor = theme.isDark ? darkTeal : const Color(0xFFF1F8F7);
+    final Color bgColor = theme.isDark ?Colors.black : const Color(0xFFF1F8F7);
     final Color textColor = theme.isDark ? Colors.white : darkTeal;
     final Color subTextColor = theme.isDark ? Colors.white70 : Colors.black54;
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: darkTeal,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         title: _isSearching
             ? _buildSearchField()
