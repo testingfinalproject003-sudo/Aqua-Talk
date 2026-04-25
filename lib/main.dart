@@ -1,5 +1,6 @@
-import 'package:aqua_talk/provider/home_provider.dart';
-import 'package:aqua_talk/provider/wallpaper_provider.dart';
+
+
+import 'package:aqua_talk/provider/message_provider.dart';
 import 'package:flutter/material.dart';
 
 import 'screens/splash_screen.dart';
@@ -10,7 +11,7 @@ import 'provider/chat_provider.dart';
 import 'provider/story_provider.dart';
 import 'provider/settings_provider.dart';
 import 'provider/theme_provider.dart';
-
+import 'package:aqua_talk/provider/chat_selection_provider.dart';
 // Firebase Imports
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // 🔥 Added for Auth
@@ -30,8 +31,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => HomeProvider()),
-        ChangeNotifierProvider(create: (_) => WallpaperProvider()),
+        ChangeNotifierProvider(create: (_) => MessageProvider()),
+        ChangeNotifierProvider(create:  (_) => ChatSelectionProvider()),
+         // For message selection
       ],
       child: const MyApp(),
     ),

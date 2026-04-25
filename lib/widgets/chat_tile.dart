@@ -4,6 +4,7 @@ import '../../provider/chat_provider.dart';
 import '../../models/chat_model.dart';
 import 'package:aqua_talk/screens/chat_screen.dart'; // ✅ Chat Detail Screen import karein
 // import 'glassmorphism.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatTile extends StatelessWidget {
   final ChatModel chat;
@@ -34,7 +35,10 @@ class ChatTile extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChatScreen(name: chat.name ,avatar: chat.avatar,),
+             builder: (context) => ChatScreen(
+  chatId: chat.id,
+  currentUserId: FirebaseAuth.instance.currentUser!.uid,
+),
             ),
           );
         },

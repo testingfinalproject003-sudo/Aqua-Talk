@@ -24,18 +24,4 @@ final int unreadCount;
     this.isGroup = false,
   });
 }
-// ================== FIREBASE TO MODEL (FUTURE USE) ==================
-  /*
-  factory ChatModel.fromFirestore(Map<String, dynamic> data, String docId) {
-    return ChatModel(
-      id: docId,
-      name: data['name'] ?? '',
-      lastMessage: data['lastMessage'] ?? '',
-      image: data['image'] ?? '',
-      time: data['time'] ?? '',
-      unreadCount: data['unreadCount'] ?? 0,
-      isFavorite: data['isFavorite'] ?? false,
-      isGroup: data['isGroup'] ?? false,
-    );
-  }
-  */
+

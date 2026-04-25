@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'dart:ui';
-// import 'package:aqua_talk/widgets/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import '../provider/story_provider.dart';
-import 'package:aqua_talk/tabs/settings_tab.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../provider/story_provider.dart';
+import 'package:aqua_talk/widgets/story_viewer.dart';
+import 'package:aqua_talk/tabs/settings_tab.dart';
+import 'package:aqua_talk/widgets/glass_container.dart';
+import 'package:aqua_talk/provider/gradient_provider.dart';
 class StoryScreen extends StatefulWidget {
   const StoryScreen({super.key});
 
@@ -14,11 +18,17 @@ class StoryScreen extends StatefulWidget {
 }
 
 class _StoryScreenState extends State<StoryScreen> {
-  // Privacy State: 0 = Contacts, 1 = Except, 2 = Only Share
-  int selectedPrivacyIndex = 0; 
-  static const Color primaryTeal = Color(0xFF004D40);
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+  String _searchQuery = "";
+  String _selectedPrivacy = "My contacts";
 
-  // --- 1. GLASSY PRIVACY MENU ---
+  int selectedPrivacyIndex = 0;
+
+  static const Color primaryTeal = Color(0xFF004D40);
+  static const Color accentTeal = Color(0xFF80CBC4);
+
+  // ================= PRIVACY =================
   void _showGlassyPrivacySheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -38,212 +48,321 @@ class _StoryScreenState extends State<StoryScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
+                  Container(width: 40, height: 4, color: Colors.white24),
                   const SizedBox(height: 20),
-                  const Text("Status privacy", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Status privacy",
+                      style: TextStyle(color: Colors.white, fontSize: 18)),
                   const SizedBox(height: 10),
-                  _buildPrivacyOption(0, "My contacts", setDialogState),
-                  _buildPrivacyOption(1, "My contacts except...", setDialogState),
-                  _buildPrivacyOption(2, "Only share with...", setDialogState),
+
+                  _buildPrivacyOption("My contacts", setDialogState),
+                  _buildPrivacyOption("My contacts except...", setDialogState),
+                  _buildPrivacyOption("Only share with...", setDialogState),
+
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("DONE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: const Text("DONE",
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
             ),
           );
-        }
+        },
       ),
     );
   }
 
-  Widget _buildPrivacyOption(int index, String title, StateSetter setDialogState) {
-    bool isSelected = selectedPrivacyIndex == index;
+  Widget _buildPrivacyOption(String title, StateSetter setDialogState) {
+    bool isSelected = _selectedPrivacy == title;
+
     return ListTile(
       onTap: () {
-        setDialogState(() => selectedPrivacyIndex = index);
-        setState(() => selectedPrivacyIndex = index); // Main screen state update
+        setDialogState(() => _selectedPrivacy = title);
+        setState(() => _selectedPrivacy = title);
       },
-      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15)),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
       leading: Icon(
         isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-        color: isSelected ? Colors.tealAccent : Colors.white70,
+        color: isSelected ? accentTeal : Colors.white70,
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<StoryProvider>();
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Updates", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: primaryTeal,
-        elevation: 0,
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (val) {
-              if (val == 'privacy') {
-                _showGlassyPrivacySheet(context);
-              } else if (val == 'settings') {
-                // ✅ Settings Screen Navigation
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsTab()));
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'privacy', child: Text("Status privacy")),
-              const PopupMenuItem(value: 'settings', child: Text("Settings")),
-            ],
-          ),
-        ],
-      ),
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
-        children: [
-          _buildMyStatusTile(),
-          _buildSectionHeader("Recent updates"),
-          provider.stories.isEmpty ? _buildEmptyState() : _buildStoryList(provider, isViewed: false),
-          _buildExpandableSection("Viewed updates", provider, isViewed: true),
-          _buildPrivacyNote(),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton.small(
-            heroTag: "text_status",
-            backgroundColor: Colors.grey.shade200,
-            child: const Icon(Icons.edit, color: primaryTeal),
-            onPressed: () => _openTextStatusCreator(context),
-          ),
-          const SizedBox(height: 15),
-          FloatingActionButton(
-            heroTag: "cam_status",
-            backgroundColor: primaryTeal,
-            child: const Icon(Icons.camera_alt, color: Colors.white),
-            onPressed: () => _pickStory(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- UI COMPONENTS WITH DARK TEAL TEXT ---
-
-  Widget _buildSectionHeader(String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.grey.shade100,
-      child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryTeal)),
-    );
-  }
-
-  Widget _buildMyStatusTile() {
-    return ListTile(
-      leading: Stack(
-        children: [
-          const CircleAvatar(radius: 28, backgroundColor: Colors.grey, child: Icon(Icons.person, color: Colors.white, size: 35)),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              decoration: const BoxDecoration(color: primaryTeal, shape: BoxShape.circle),
-              child: const Icon(Icons.add, color: Colors.white, size: 20),
-            ),
-          ),
-        ],
-      ),
-      
-     
-     
-    );
-  }
-
-  Widget _buildStoryList(dynamic provider, {bool isViewed = false}) {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: provider.stories.length,
-      separatorBuilder: (context, index) => const Divider(height: 1, indent: 70),
-      itemBuilder: (_, i) {
-        final story = provider.stories[i];
-        return ListTile(
-          leading: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: isViewed ? Colors.grey : primaryTeal, width: 2),
-            ),
-            child: CircleAvatar(radius: 25, backgroundImage: NetworkImage(story.image)),
-          ),
-          title: Text(story.userName, style: const TextStyle(fontWeight: FontWeight.bold, color: primaryTeal)),
-          subtitle: Text(story.time.toString(), style: const TextStyle(color: Colors.black54)),
-        );
-      },
-    );
-  }
-
-  Widget _buildExpandableSection(String title, dynamic provider, {bool isViewed = false}) {
-    return ExpansionTile(
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryTeal)),
-      iconColor: primaryTeal,
-      children: [_buildStoryList(provider, isViewed: isViewed)],
-    );
-  }
-
-  Widget _buildPrivacyNote() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 30),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.lock_outline, size: 14, color: primaryTeal),
-          SizedBox(width: 5),
-          Text("Your status updates are end-to-end encrypted", style: TextStyle(fontSize: 12, color: primaryTeal)),
-        ],
-      ),
-    );
-  }
-
-  // --- LOGIC FUNCTIONS ---
-
-  void _openTextStatusCreator(BuildContext context) {
+  // ================= CAMERA =================
+  void _showCameraOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        color: Colors.teal,
-        height: MediaQuery.of(context).size.height,
-        padding: const EdgeInsets.all(20),
-        child: const Center(
-          child: TextField(
-            autofocus: true,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 32),
-            decoration: InputDecoration(hintText: "Type a status", border: InputBorder.none, hintStyle: TextStyle(color: Colors.white54)),
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(15),
+        child: GlassContainer(
+          child: SizedBox(
+            height: 180,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildActionCircle(Icons.camera_alt, "Camera",
+                    () => _pickMedia(ImageSource.camera, false)),
+                _buildActionCircle(Icons.videocam, "Video",
+                    () => _pickMedia(ImageSource.camera, true)),
+                _buildActionCircle(Icons.photo_library, "Gallery",
+                    () => _pickMedia(ImageSource.gallery, false)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _pickStory(BuildContext context) async {
+  Future<void> _pickMedia(ImageSource source, bool isVideo) async {
     final picker = ImagePicker();
-    final img = await picker.pickImage(source: ImageSource.gallery);
-    if (!context.mounted) return;
-    if (img != null) context.read<StoryProvider>().addStory(img.path);
+
+    XFile? media = isVideo
+        ? await picker.pickVideo(
+            source: source,
+            maxDuration: const Duration(minutes: 5),
+          )
+        : await picker.pickImage(source: source);
+
+    if (media != null && mounted) {
+      context
+          .read<StoryProvider>()
+          .addStory(media.path, isVideo: isVideo);
+    }
   }
 
-  Widget _buildEmptyState() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 30),
-      child: Center(child: Text("No status updates yet", style: TextStyle(color: primaryTeal))),
+  // ================= BUILD =================
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<StoryProvider>();
+    final user = FirebaseAuth.instance.currentUser;
+
+    final currentUserId = user?.uid ?? "guest_user";
+
+    final myStories =
+        provider.stories.where((s) => s.userId == currentUserId).toList();
+
+    final hasMyStatus = myStories.isNotEmpty;
+
+    final filteredStories = provider.stories
+        .where((s) =>
+            s.userId != currentUserId &&
+            s.userName.toLowerCase().contains(_searchQuery))
+        .toList();
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+
+      // ================= APP BAR =================
+      appBar: AppBar(
+        
+        backgroundColor: primaryTeal,
+        elevation: 0,
+
+        // 👇 SAME FIX (spacing)
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(8),
+          child: SizedBox(height: 10),
+        ),
+
+        title: _isSearching
+            ? _buildSearchField()
+            : const Text("Updates",
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isSearching ? Icons.close : Icons.search,
+              color: Colors.white,
+            ),
+            onPressed: () =>
+                setState(() => _isSearching = !_isSearching),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (val) {
+              if (val == 'privacy') {
+                _showGlassyPrivacySheet(context);
+              } else if (val == 'settings') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SettingsTab(),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                  value: 'privacy', child: Text("Status privacy")),
+              PopupMenuItem(value: 'settings', child: Text("Settings")),
+            ],
+          ),
+        ],
+      ),
+
+      // ================= BODY =================
+      body: Container(
+        
+    decoration: const BoxDecoration(
+      gradient: GradientProvider.mainGradient,
+      
+    ),
+      
+      child: SingleChildScrollView(
+        
+        physics: const BouncingScrollPhysics(),
+        
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              onTap: () => hasMyStatus
+                  ? Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              const StoryViewer(initialIndex: 0)))
+                  : _showCameraOptions(context),
+              leading: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                    backgroundImage: user?.photoURL != null
+                        ? NetworkImage(user!.photoURL!)
+                        : null,
+                    child: user?.photoURL == null
+                        ? const Icon(Icons.person, color: primaryTeal)
+                        : null,
+                  ),
+                  if (!hasMyStatus)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: accentTeal,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.add,
+                            size: 16, color: primaryTeal),
+                      ),
+                    )
+                ],
+              ),
+              title: const Text("My Status",
+                  style: TextStyle(color: primaryTeal)),
+              subtitle: Text(
+                hasMyStatus
+                    ? "View your update"
+                    : "Tap to add status update",
+              ),
+            ),
+
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text("RECENT UPDATES",
+                  style: TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: filteredStories.length,
+              itemBuilder: (_, i) =>
+                  _buildUserTile(filteredStories[i], i),
+            ),
+          ],
+        ),
+      ),
+      ),
+    
+
+      // ================= FLOATING BUTTON =================
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton.small(
+            heroTag: "text",
+            backgroundColor: Colors.grey.shade200,
+            child: const Icon(Icons.edit, color: primaryTeal),
+            onPressed: () {},
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: "cam",
+            backgroundColor: accentTeal,
+            child: const Icon(Icons.camera_alt, color: primaryTeal),
+            onPressed: () => _showCameraOptions(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= USER TILE =================
+  Widget _buildUserTile(dynamic story, int index) {
+    return ListTile(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StoryViewer(initialIndex: index),
+        ),
+      ),
+      leading: CircleAvatar(
+        backgroundImage: story.image.startsWith('http')
+            ? NetworkImage(story.image)
+            : FileImage(File(story.image)) as ImageProvider,
+      ),
+      title: Text(story.userName,
+          style: const TextStyle(color: primaryTeal)),
+      subtitle: const Text("Just now"),
+    );
+  }
+
+  // ================= SEARCH =================
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchController,
+      style: const TextStyle(color: Colors.white),
+      decoration: const InputDecoration(
+        hintText: "Search updates...",
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: Colors.white54),
+      ),
+      onChanged: (val) =>
+          setState(() => _searchQuery = val.toLowerCase()),
+    );
+  }
+
+  // ================= ACTION CIRCLE =================
+  Widget _buildActionCircle(
+      IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: Colors.white24,
+            child: Icon(icon, color: primaryTeal),
+          ),
+          const SizedBox(height: 8),
+          Text(label,
+              style:
+                  const TextStyle(color: Colors.white, fontSize: 12)),
+        ],
+      ),
     );
   }
 }

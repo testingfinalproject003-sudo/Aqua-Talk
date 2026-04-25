@@ -1,14 +1,14 @@
 import 'dart:ui';
+import 'package:aqua_talk/screens/story_screen.dart';
+import 'package:aqua_talk/tabs/chat_tab.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-
-// Ensure these paths match your project structure
-import '../provider/home_provider.dart';
+import 'package:provider/provider.dart';
+// Screens
 import '../provider/theme_provider.dart';
-import '../provider/gradient_provider.dart'; 
-import '../tabs/chat_tab.dart';
-import 'package:aqua_talk/tabs/stroy_tab.dart';
+import '../provider/gradient_provider.dart';
+
+
 import '../tabs/settings_tab.dart';
 
 class AquaHomeScreen extends StatefulWidget {
@@ -21,16 +21,28 @@ class AquaHomeScreen extends StatefulWidget {
 class _AquaHomeScreenState extends State<AquaHomeScreen> {
   static const Color darkTeal = Color(0xFF004D40);
 
-  // ✅ 1. Image Picker Logic
+  // ✅ REPLACED HomeProvider with local state
+  int currentIndex = 0;
+
+  void changeTab(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+  }
+
+  // ---------------- IMAGE PICKER ----------------
   Future<void> _handleMedia(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
+
     try {
       final XFile? file = await picker.pickImage(
         source: source,
         imageQuality: 70,
       );
+
       if (file != null && mounted) {
-        Navigator.pop(context); // Sheet band karne ke liye
+        Navigator.pop(context);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Selected: ${file.name}"),
@@ -44,7 +56,7 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
     }
   }
 
-  // ✅ 2. Glassy Menu Sheet
+  // ---------------- MENU SHEET ----------------
   void _showGlassyMenuSheet(BuildContext context, ThemeProvider theme) {
     showModalBottomSheet(
       context: context,
@@ -61,18 +73,36 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 15),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
-              _buildMenuTile(Icons.group_add_outlined, "New Group", () => Navigator.pop(context)),
+
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+
+              _buildMenuTile(Icons.group_add_outlined, "New Group", () {
+                Navigator.pop(context);
+              }),
+
               _buildMenuTile(
-                theme.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, 
-                "Switch Theme", 
+                theme.isDark
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+                "Switch Theme",
                 () {
                   theme.toggleTheme();
                   Navigator.pop(context);
-                }
+                },
               ),
+
               const Divider(color: Colors.white10, indent: 20, endIndent: 20),
-              _buildMenuTile(Icons.logout_rounded, "Logout", () {}, isDestructive: true),
+
+              _buildMenuTile(Icons.logout_rounded, "Logout", () {},
+                  isDestructive: true),
+
               const SizedBox(height: 20),
             ],
           ),
@@ -81,15 +111,29 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
     );
   }
 
-  Widget _buildMenuTile(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false}) {
+  Widget _buildMenuTile(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
     return ListTile(
-      leading: Icon(icon, color: isDestructive ? Colors.redAccent : Colors.white),
-      title: Text(title, style: TextStyle(color: isDestructive ? Colors.redAccent : Colors.white, fontWeight: FontWeight.w500)),
+      leading: Icon(
+        icon,
+        color: isDestructive ? Colors.redAccent : Colors.white,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isDestructive ? Colors.redAccent : Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
       onTap: onTap,
     );
   }
 
-  // ✅ 3. Glassy Camera Sheet
+  // ---------------- CAMERA SHEET ----------------
   void _showGlassyCameraSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -106,8 +150,10 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildActionCircle(Icons.camera_alt_rounded, "Camera", () => _handleMedia(ImageSource.camera)),
-              _buildActionCircle(Icons.photo_library_rounded, "Gallery", () => _handleMedia(ImageSource.gallery)),
+              _buildActionCircle(Icons.camera_alt_rounded, "Camera",
+                  () => _handleMedia(ImageSource.camera)),
+              _buildActionCircle(Icons.photo_library_rounded, "Gallery",
+                  () => _handleMedia(ImageSource.gallery)),
             ],
           ),
         ),
@@ -115,7 +161,11 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
     );
   }
 
-  Widget _buildActionCircle(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildActionCircle(
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -132,93 +182,114 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
 
+  // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
-    final homeProvider = context.watch<HomeProvider>();
     final theme = context.watch<ThemeProvider>();
 
     final List<Widget> pages = [
       const ChatTab(),
-      const StoryTab(),
+      const StoryScreen(),
       const SettingsTab(),
     ];
 
     return Scaffold(
       extendBody: true,
-      
-      // Hide AppBar on Updates Tab
-      appBar: homeProvider.currentIndex == 1 ? null : AppBar(
-        backgroundColor: darkTeal,
-        elevation: 0,
-        title: const Text("AquaTalk", 
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26, color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt_outlined, color: Colors.white),
-            onPressed: () => _showGlassyCameraSheet(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () => _showGlassyMenuSheet(context, theme),
-          ),
-        ],
-      ),
-      
+
+      // ---------------- APP BAR ----------------
+      appBar: currentIndex == 1
+          ? null
+          : AppBar(
+              backgroundColor: darkTeal,
+              elevation: 0,
+              title: const Text(
+                "AquaTalk",
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 26,
+                  color: Colors.white,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt_outlined,
+                      color: Colors.white),
+                  onPressed: () => _showGlassyCameraSheet(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () => _showGlassyMenuSheet(context, theme),
+                ),
+              ],
+            ),
+
+      // ---------------- BODY ----------------
       body: Container(
         height: double.infinity,
         width: double.infinity,
         decoration: const BoxDecoration(
-          // ✅ Using your custom GradientProvider
-          gradient: GradientProvider.mainGradient, 
+          gradient: GradientProvider.mainGradient,
         ),
-        child: pages[homeProvider.currentIndex],
+        child: pages[currentIndex],
       ),
 
+      // ---------------- BOTTOM NAV ----------------
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: homeProvider.currentIndex,
-        onTap: (index) => homeProvider.changeTab(index),
+        currentIndex: currentIndex,
+        onTap: changeTab, // ✅ replaced provider
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white60,
         backgroundColor: darkTeal,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline_rounded), 
+            icon: Icon(Icons.chat_bubble_outline_rounded),
             activeIcon: Icon(Icons.chat_bubble_rounded),
-            label: "Chats"
+            label: "Chats",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.donut_large_rounded), 
-            label: "Updates"
+            icon: Icon(Icons.donut_large_rounded),
+            label: "Updates",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined), 
+            icon: Icon(Icons.settings_outlined),
             activeIcon: Icon(Icons.settings_rounded),
-            label: "Settings"
+            label: "Settings",
           ),
         ],
       ),
 
-      floatingActionButton: homeProvider.currentIndex == 2 
-        ? null 
-        : FloatingActionButton(
-            backgroundColor: theme.isDark ? const Color(0xFF80CBC4) : darkTeal,
-            elevation: 4,
-            child: Icon(
-              homeProvider.currentIndex == 0 ? Icons.message_rounded : Icons.camera_alt_rounded, 
-              color: Colors.white
+      // ---------------- FAB ----------------
+      floatingActionButton: currentIndex == 2
+          ? null
+          : FloatingActionButton(
+              backgroundColor:
+                  theme.isDark ? const Color(0xFF80CBC4) : darkTeal,
+              elevation: 4,
+              child: Icon(
+                currentIndex == 0
+                    ? Icons.message_rounded
+                    : Icons.camera_alt_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                if (currentIndex == 1) {
+                  _showGlassyCameraSheet(context);
+                }
+              },
             ),
-            onPressed: () {
-              if(homeProvider.currentIndex == 1) {
-                _showGlassyCameraSheet(context);
-              }
-            },
-          ),
     );
   }
 }
