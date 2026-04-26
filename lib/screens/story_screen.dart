@@ -206,7 +206,7 @@ class _StoryScreenState extends State<StoryScreen> {
       ),
 
       // ================= BODY =================
-      body: Container(
+      body: DecoratedBox(
         
     decoration: const BoxDecoration(
       gradient: GradientProvider.mainGradient,

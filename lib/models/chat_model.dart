@@ -23,5 +23,21 @@ final int unreadCount;
     this.isFavorite = false, // Default favorite nahi hoga
     this.isGroup = false,
   });
+  factory ChatModel.fromMap(Map<String, dynamic> map) {
+  return ChatModel(
+    id: map['id'] ?? '',
+    name: map['name'] ?? '',
+    message: map['message'] ?? '',
+    time: map['time'] ?? '',
+    unread: map['unread'] ?? 0,
+    avatar: map['avatar'] ?? '',
+    isOnline: map['isOnline'] ?? false,
+    isPinned: map['isPinned'] ?? false,
+    unreadCount: map['unreadCount'] ?? 0,
+    isFavorite: map['isFavorite'] ?? false,
+    isGroup: map['isGroup'] ?? false,
+  );
 }
+}
+
 

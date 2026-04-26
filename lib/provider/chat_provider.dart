@@ -95,4 +95,9 @@ void togglePin(String id) {
     notifyListeners();
   }
 }
+Stream<List<ChatModel>> getChats() {
+  return _chatService.getChats().map((data) {
+    return data.map((e) => e).toList();
+  });
+}
 }

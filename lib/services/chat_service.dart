@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/message_model.dart';
+import '../models/chat_model.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -75,4 +76,11 @@ class ChatService {
       await ref.delete();
     }
   }
+  Stream<List<ChatModel>> getChats() {
+  return _firestore.collection('chats').snapshots().map((snapshot) {
+    return snapshot.docs.map((doc) {
+      return ChatModel.fromMap(doc.data());
+    }).toList();
+  });
+}
 }

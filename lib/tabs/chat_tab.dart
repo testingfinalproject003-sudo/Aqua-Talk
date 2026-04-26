@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:aqua_talk/provider/chat_provider.dart';
 import '../widgets/chat_tile.dart';
+import '../models/chat_model.dart';
 
 // ================== FIREBASE IMPORTS (FUTURE USE) ==================
 // import 'package:cloud_firestore/cloud_firestore.dart';
@@ -121,18 +122,40 @@ class _ChatTabState extends State<ChatTab> {
         const Divider(height: 1),
 
         /// ================== 4. CHAT LIST ==================
-        Expanded(
-          child: filteredChats.isEmpty 
-            ? _buildNoChatsFound()
-            : ListView.builder(
-                itemCount: filteredChats.length,
-                physics: const BouncingScrollPhysics(),
-                itemBuilder: (_, i) => ChatTile(
-                  chat: filteredChats[i],
-                  index: i,
-                ),
+      Expanded(
+  child: StreamBuilder<List<ChatModel>>(
+    stream: context.read<ChatProvider>().getChats(),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final chats = snapshot.data!;
+
+      final filteredChats = chats.where((c) {
+        bool matchesSearch =
+            c.name.toLowerCase().contains(search.toLowerCase());
+
+        if (activeFilter == "All") return matchesSearch;
+        if (activeFilter == "Unread") return matchesSearch && (c.unreadCount > 0);
+        if (activeFilter == "Favorites") return matchesSearch && (c.isFavorite);
+        if (activeFilter == "Groups") return matchesSearch && (c.isGroup);
+
+        return matchesSearch;
+      }).toList();
+
+      return filteredChats.isEmpty
+          ? _buildNoChatsFound()
+          : ListView.builder(
+              itemCount: filteredChats.length,
+              itemBuilder: (_, i) => ChatTile(
+                chat: filteredChats[i],
+                index: i,
               ),
-        ),
+            );
+    },
+  ),
+),
       ],
     );
   }
