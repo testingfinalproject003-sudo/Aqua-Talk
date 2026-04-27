@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../provider/message_provider.dart';
-import '../models/message_model.dart';
-import '../screens/message_bubble.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -22,104 +19,102 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  void sendMessage() {
+  /// ✅ SEND MESSAGE (FIXED STRUCTURE)
+  void sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final message = MessageModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: widget.currentUserId,
-      receiverId: "receiverId",
-      text: text,
-      isMe: true,
-      time: DateTime.now(),
+    final msgRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.chatId)
+        .collection('messages');
 
-      // 🔥 IMPORTANT (reactions empty)
-      reactions: {},
-    );
+    await msgRef.add({
+      "text": text,
+      "senderId": widget.currentUserId,
+      "time": FieldValue.serverTimestamp(),
+      "reactions": {},
+    });
 
-    Provider.of<MessageProvider>(context, listen: false)
-        .sendMessage(widget.chatId, message);
+    /// update chat preview
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.chatId)
+        .set({
+      "lastMessage": text,
+      "updatedAt": FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
 
     _controller.clear();
-
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<MessageProvider>(context);
-    final messages = provider.messages;
+    final messagesStream = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.chatId)
+        .collection('messages')
+        .orderBy('time')
+        .snapshots();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Chat"),
-      ),
+      appBar: AppBar(title: const Text("Chat")),
+
       body: Column(
         children: [
-          // 💬 MESSAGE LIST
+          /// MESSAGES
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final msg = messages[index];
+            child: StreamBuilder(
+              stream: messagesStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                return MessageBubble(
-                  text: msg.text,
-                  isMe: msg.isMe,
-                  time: msg.time.toString(),
+                final docs = snapshot.data!.docs;
 
-                  // 🔥 REQUIRED FOR REACTION
-                  chatId: widget.chatId,
-                  messageId: msg.id,
-                  currentUserId: widget.currentUserId,
-                  reactions: msg.reactions,
+                return ListView.builder(
+                  controller: _scrollController,
+                  itemCount: docs.length,
+                  itemBuilder: (_, i) {
+                    final data = docs[i];
+
+                    return Align(
+                      alignment: data['senderId'] == widget.currentUserId
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(data['text'] ?? ""),
+                      ),
+                    );
+                  },
                 );
               },
             ),
           ),
 
-          // ✏️ INPUT FIELD
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            color: Colors.grey.shade200,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      hintText: "Type a message...",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 15),
-                    ),
+          /// INPUT
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    hintText: "Message...",
                   ),
                 ),
-                const SizedBox(width: 8),
-
-                // SEND BUTTON
-                CircleAvatar(
-                  backgroundColor: Colors.teal,
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: sendMessage,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send),
+                onPressed: sendMessage,
+              ),
+            ],
           ),
         ],
       ),

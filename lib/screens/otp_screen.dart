@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // 🔥 Firebase Import Enabled
 import 'package:aqua_talk/provider/gradient_provider.dart';
-import 'home_screen.dart'; 
+import 'splash_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   // 🔥 Receives data from LoginScreen
@@ -79,7 +79,7 @@ class _OtpScreenState extends State<OtpScreen> {
   void _navigateToHome() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const AquaHomeScreen()), 
+      MaterialPageRoute(builder: (context) => const SplashScreen()),
       (route) => false,
     );
   }

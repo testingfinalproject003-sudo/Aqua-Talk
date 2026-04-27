@@ -15,7 +15,6 @@ class MessageModel {
   final bool isPinned;
   final bool isStarred;
   final String? replyTo;
-
   final DateTime? scheduledTime;
 
   final Map<String, List<String>> reactions;
@@ -28,7 +27,6 @@ class MessageModel {
     required this.isMe,
     required this.time,
     this.image,
-
     this.isSeen = false,
     this.isEdited = false,
     this.isDeleted = false,
@@ -36,11 +34,10 @@ class MessageModel {
     this.isStarred = false,
     this.replyTo,
     this.scheduledTime,
-
     this.reactions = const {},
   });
 
-  // ================== FROM FIREBASE ==================
+  /// ================== FROM FIREBASE ==================
   factory MessageModel.fromMap(Map<String, dynamic> map, String id) {
     return MessageModel(
       id: id,
@@ -49,7 +46,8 @@ class MessageModel {
       text: map['text'] ?? '',
       isMe: map['isMe'] ?? false,
 
-      time: (map['time'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      // 🔥 FIX: timestamp consistent
+      time: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
 
       image: map['image'],
 
@@ -59,7 +57,7 @@ class MessageModel {
       isPinned: map['isPinned'] ?? false,
       isStarred: map['isStarred'] ?? false,
 
-      scheduledTime: (map['scheduledTime'] != null)
+      scheduledTime: map['scheduledTime'] != null
           ? (map['scheduledTime'] as Timestamp).toDate()
           : null,
 
@@ -76,22 +74,24 @@ class MessageModel {
     );
   }
 
-  // ================== TO FIREBASE ==================
+  /// ================== TO FIREBASE ==================
   Map<String, dynamic> toMap() {
     return {
       'senderId': senderId,
       'receiverId': receiverId,
       'text': text,
       'isMe': isMe,
-      'time': Timestamp.fromDate(time),
+
+      // 🔥 FIX: always timestamp
+      'timestamp': FieldValue.serverTimestamp(),
 
       'image': image,
-
       'isSeen': isSeen,
       'isEdited': isEdited,
       'isDeleted': isDeleted,
       'isPinned': isPinned,
       'isStarred': isStarred,
+      'replyTo': replyTo,
 
       'scheduledTime':
           scheduledTime != null ? Timestamp.fromDate(scheduledTime!) : null,

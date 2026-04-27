@@ -206,14 +206,16 @@ class _StoryScreenState extends State<StoryScreen> {
       ),
 
       // ================= BODY =================
-      body: DecoratedBox(
-        
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
     decoration: const BoxDecoration(
       gradient: GradientProvider.mainGradient,
       
     ),
       
-      child: SingleChildScrollView(
+      child:SafeArea(
+        child: SingleChildScrollView(
         
         physics: const BouncingScrollPhysics(),
         
@@ -261,6 +263,7 @@ class _StoryScreenState extends State<StoryScreen> {
                 hasMyStatus
                     ? "View your update"
                     : "Tap to add status update",
+                    style: const TextStyle(color: Colors.grey ),
               ),
             ),
 
@@ -280,6 +283,7 @@ class _StoryScreenState extends State<StoryScreen> {
             ),
           ],
         ),
+      ),
       ),
       ),
     

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // 🔥 Firebase Import
 import 'package:aqua_talk/provider/gradient_provider.dart';
 import 'otp_screen.dart';
+import 'splash_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -56,6 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
         phoneNumber: fullNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
           await _auth.signInWithCredential(credential);
+          if (!mounted) return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const SplashScreen()),
+            (route) => false,
+          );
         },
         verificationFailed: (FirebaseAuthException e) {
           setState(() => isLoading = false);
@@ -66,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
         codeSent: (String verificationId, int? resendToken) {
           setState(() => isLoading = false);
           // 🚀 Navigating to OTP Screen with real data
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (_) => OtpScreen(

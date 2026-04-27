@@ -1,52 +1,29 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// ================== SETTINGS PROVIDER ==================
-/// Ye app ki settings control karta hai (theme + wallpaper etc)
+/// App settings: font size and user preferences.
 class SettingsProvider with ChangeNotifier {
-  bool isDark = false;
-  String wallpaper = "";
+  double fontSize = 14.0;
 
   SettingsProvider() {
-    loadSettings();
+    loadFontSize();
   }
 
-  /// ================== THEME ==================
-  void toggleTheme() async {
-    isDark = !isDark;
-
+  void setFontSize(double size) async {
+    fontSize = size;
     final prefs = await SharedPreferences.getInstance();
-    prefs.setBool("darkMode", isDark);
-
+    await prefs.setDouble('fontSize', fontSize);
     notifyListeners();
   }
 
-  /// ================== WALLPAPER ==================
-  void setWallpaper(String path) async {
-    wallpaper = path;
+  void setSmallFont() => setFontSize(12.0);
+  void setMediumFont() => setFontSize(14.0);
+  void setLargeFont() => setFontSize(18.0);
 
+  Future<void> loadFontSize() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString("wallpaper", path);
-
+    fontSize = prefs.getDouble('fontSize') ?? 14.0;
     notifyListeners();
   }
-
-  /// ================== LOAD ==================
-  void loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    isDark = prefs.getBool("darkMode") ?? false;
-    wallpaper = prefs.getString("wallpaper") ?? "";
-
-    notifyListeners();
-  }
-
-  // ================== FIREBASE READY ==================
-
-  // Future<void> saveSettingsToFirebase() async {
-  //   await FirebaseFirestore.instance.collection("settings").doc("user").set({
-  //     "darkMode": isDark,
-  //     "wallpaper": wallpaper,
-  //   });
-  // }
 }

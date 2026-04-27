@@ -8,6 +8,7 @@ class ThemeProvider with ChangeNotifier {
     loadTheme();
   }
 
+  // ================== TOGGLE THEME ==================
   void toggleTheme() async {
     isDark = !isDark;
     notifyListeners();
@@ -16,9 +17,12 @@ class ThemeProvider with ChangeNotifier {
     prefs.setBool("isDark", isDark);
   }
 
+  // ================== LOAD THEME (FIXED) ==================
   void loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
+
     isDark = prefs.getBool("isDark") ?? false;
-    notifyListeners();
+
+    notifyListeners(); // keep, but now stable after load
   }
 }

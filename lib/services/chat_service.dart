@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/message_model.dart';
-import '../models/chat_model.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -10,12 +9,45 @@ class ChatService {
     required String chatId,
     required MessageModel message,
   }) async {
-    await _firestore
-        .collection('chats')
-        .doc(chatId)
+    final chatRef = _firestore.collection('chats').doc(chatId);
+
+    // 🔥 Ensure chat exists
+    final chatDoc = await chatRef.get();
+
+    if (!chatDoc.exists) {
+      await chatRef.set({
+        "participants": [message.senderId, message.receiverId],
+        "lastMessage": message.text,
+        "updatedAt": FieldValue.serverTimestamp(),
+      });
+    }
+
+    // 🔥 Save message
+    await chatRef
         .collection('messages')
         .doc(message.id)
         .set(message.toMap());
+
+    // 🔥 Update chat (VERY IMPORTANT)
+    await chatRef.update({
+      "lastMessage": message.text,
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ================== GET MESSAGES (REALTIME) ==================
+  Stream<List<MessageModel>> getMessages(String chatId) {
+    return _firestore
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .orderBy("time", descending: false)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return MessageModel.fromMap(doc.data(), doc.id);
+      }).toList();
+    });
   }
 
   // ================== ADD REACTION ==================
@@ -54,7 +86,7 @@ class ChatService {
     });
   }
 
-  // ================== TYPING ==================
+  // ================== TYPING STATUS ==================
   Future<void> setTyping({
     required String chatId,
     required String uid,
@@ -76,11 +108,38 @@ class ChatService {
       await ref.delete();
     }
   }
-  Stream<List<ChatModel>> getChats() {
-  return _firestore.collection('chats').snapshots().map((snapshot) {
-    return snapshot.docs.map((doc) {
-      return ChatModel.fromMap(doc.data());
-    }).toList();
-  });
-}
+
+  // ================== DELETE MESSAGE ==================
+  Future<void> deleteMessage({
+    required String chatId,
+    required String messageId,
+  }) async {
+    await _firestore
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .doc(messageId)
+        .update({
+      "isDeleted": true,
+      "text": "This message was deleted",
+    });
+  }
+
+  // ================== EDIT MESSAGE ==================
+  Future<void> editMessage({
+    required String chatId,
+    required String messageId,
+    required String newText,
+  }) async {
+    await _firestore
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .doc(messageId)
+        .update({
+      "text": newText,
+      "isEdited": true,
+      "editedAt": FieldValue.serverTimestamp(),
+    });
+  }
 }

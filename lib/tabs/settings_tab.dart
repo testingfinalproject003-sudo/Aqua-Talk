@@ -1,9 +1,19 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../provider/settings_provider.dart';
 import '../provider/theme_provider.dart';
+import '../services/user_service.dart';
+
 import '../screens/profile_screen.dart';
+import '../screens/account_screen.dart';
+import '../screens/privacy_screen.dart';
+import '../screens/favorite_screen.dart';
+import '../screens/login_screen.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -14,30 +24,48 @@ class SettingsTab extends StatefulWidget {
 
 class _SettingsTabState extends State<SettingsTab> {
   final TextEditingController _searchController = TextEditingController();
+
   bool _isSearching = false;
   String _searchQuery = "";
 
+  // ================= NAVIGATION =================
+  void _openScreen(Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
+  // ================= LOGOUT =================
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
     final theme = context.watch<ThemeProvider>();
-
-    
-    final textTheme = Theme.of(context).textTheme;
-
-    // ✅ FIXED DARK/LIGHT BACKGROUND
-    final bgColor = theme.isDark ? Colors.black :Color(0xFFB2DFDB);
-
     final isDark = theme.isDark;
 
-   
+    final textTheme = Theme.of(context).textTheme;
+
+    final bgColor = isDark ? Colors.black : const Color(0xFFB2DFDB);
 
     return Scaffold(
       backgroundColor: bgColor,
 
+      // ================= APPBAR =================
       appBar: AppBar(
-        backgroundColor: isDark ? Colors.black : Color(0xFFB2DFDB),
+        backgroundColor: isDark ? Colors.black : const Color(0xFFB2DFDB),
         elevation: 0,
+
         title: _isSearching
             ? _buildSearchField(context)
             : Text(
@@ -47,45 +75,46 @@ class _SettingsTabState extends State<SettingsTab> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
+
         iconTheme: IconThemeData(
           color: isDark ? Colors.white : Colors.black,
         ),
+
         actions: [
           IconButton(
-            icon: Icon(
-              _isSearching ? Icons.close : Icons.search,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-            onPressed: () => setState(() {
-              _isSearching = !_isSearching;
-              if (!_isSearching) {
-                _searchQuery = "";
-                _searchController.clear();
-              }
-            }),
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+
+                if (!_isSearching) {
+                  _searchQuery = "";
+                  _searchController.clear();
+                }
+              });
+            },
           ),
         ],
       ),
 
+      // ================= BODY (OLD UI FIXED) =================
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
-          if (!_isSearching) ...[
-            _buildGlassGroup(context, [
-              _buildProfileHeader(context),
-            ]),
-            const SizedBox(height: 20),
-          ],
+          _buildGlassGroup(context, [
+            _buildProfileHeader(context),
+          ]),
+
+          const SizedBox(height: 20),
 
           _buildSectionTitle("Account & Security", context),
-
           _buildGlassGroup(context, [
             _buildSettingsTile(
               Icons.key_rounded,
               "Account",
               "Security, change number",
-              () => _navigateTo(context, "Account"),
+              () => _openScreen(const AccountScreen()),
               context,
             ),
             _buildDivider(context),
@@ -93,7 +122,7 @@ class _SettingsTabState extends State<SettingsTab> {
               Icons.lock_rounded,
               "Privacy",
               "Last seen, profile photo",
-              () => _showPrivacyControls(context),
+              () => _openScreen(const PrivacyScreen()),
               context,
             ),
           ]),
@@ -103,19 +132,13 @@ class _SettingsTabState extends State<SettingsTab> {
           _buildGlassGroup(context, [
             _buildThemeSwitch(context),
             _buildDivider(context),
-            _buildSettingsTile(
-              Icons.format_size_rounded,
-              "Font Size",
-              "Current: Medium",
-              () => _showFontSizePicker(context, settings),
-              context,
-            ),
+            _buildFontSizeTile(context),
             _buildDivider(context),
             _buildSettingsTile(
               Icons.favorite_rounded,
               "Favorite Contacts",
               "Manage your priority list",
-              () => _navigateTo(context, "Favorites"),
+              () => _openScreen(const FavoriteScreen()),
               context,
             ),
           ]),
@@ -127,7 +150,7 @@ class _SettingsTabState extends State<SettingsTab> {
               Icons.logout_rounded,
               "Logout",
               "Sign out from AquaTalk",
-              () => _showLogoutDialog(context),
+              _logout,
               context,
               isDanger: true,
             ),
@@ -141,7 +164,25 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= GLASS CARD =================
+  // ================= SEARCH FIELD FIX =================
+  Widget _buildSearchField(BuildContext context) {
+    return TextField(
+      controller: _searchController,
+      autofocus: true,
+      style: const TextStyle(color: Colors.black),
+      onChanged: (val) {
+        setState(() {
+          _searchQuery = val.toLowerCase();
+        });
+      },
+      decoration: const InputDecoration(
+        hintText: "Search settings...",
+        border: InputBorder.none,
+      ),
+    );
+  }
+
+  // ================= GLASS UI (UNCHANGED) =================
   Widget _buildGlassGroup(BuildContext context, List<Widget> children) {
     final theme = context.watch<ThemeProvider>();
 
@@ -167,7 +208,7 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= SETTINGS TILE =================
+  // ================= TILE (FIX SEARCH BUG) =================
   Widget _buildSettingsTile(
     IconData icon,
     String title,
@@ -178,7 +219,10 @@ class _SettingsTabState extends State<SettingsTab> {
   }) {
     final theme = context.watch<ThemeProvider>();
 
-    if (_isSearching && !title.toLowerCase().contains(_searchQuery)) {
+    // ✅ FIX: isNotEmpty use (error fix)
+    if (_isSearching &&
+        _searchQuery.isNotEmpty &&
+        !title.toLowerCase().contains(_searchQuery)) {
       return const SizedBox.shrink();
     }
 
@@ -206,7 +250,6 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= SWITCH =================
   Widget _buildThemeSwitch(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
 
@@ -219,7 +262,45 @@ class _SettingsTabState extends State<SettingsTab> {
       ),
       value: theme.isDark,
       onChanged: (val) => theme.toggleTheme(),
-      activeThumbColor: Colors.white,
+    );
+  }
+
+  Widget _buildFontSizeTile(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    final theme = context.watch<ThemeProvider>();
+    final color = theme.isDark ? Colors.white : Colors.black;
+
+    return ListTile(
+      leading: Icon(Icons.text_fields, color: color),
+      title: Text(
+        "Font Size",
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(
+        settings.fontSize == 12.0
+            ? 'Small'
+            : settings.fontSize == 18.0
+                ? 'Large'
+                : 'Medium',
+        style: TextStyle(color: theme.isDark ? Colors.white70 : Colors.black54),
+      ),
+      trailing: PopupMenuButton<String>(
+        icon: Icon(Icons.arrow_drop_down, color: color),
+        onSelected: (value) {
+          if (value == 'small') {
+            context.read<SettingsProvider>().setSmallFont();
+          } else if (value == 'medium') {
+            context.read<SettingsProvider>().setMediumFont();
+          } else {
+            context.read<SettingsProvider>().setLargeFont();
+          }
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'small', child: Text('Small')),
+          PopupMenuItem(value: 'medium', child: Text('Medium')),
+          PopupMenuItem(value: 'large', child: Text('Large')),
+        ],
+      ),
     );
   }
 
@@ -230,54 +311,85 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= PROFILE =================
+  // ================= PROFILE (FIXED LATER FIREBASE LINK READY) =================
   Widget _buildProfileHeader(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    return ListTile(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ProfileScreen()),
-      ),
-      leading: CircleAvatar(
-        backgroundColor: theme.isDark ? Colors.white : Colors.black,
-        child: Icon(Icons.person,
-            color: theme.isDark ? Colors.black : Colors.white),
-      ),
-      title: Text(
-        "Jiya",
-        style: TextStyle(
-          color: theme.isDark ? Colors.white : Colors.black,
+    if (uid == null) {
+      return ListTile(
+        onTap: () => _openScreen(const ProfileScreen()),
+        leading: CircleAvatar(
+          backgroundColor: theme.isDark ? Colors.white : Colors.black,
+          child: Icon(
+            Icons.person,
+            color: theme.isDark ? Colors.black : Colors.white,
+          ),
         ),
-      ),
-      subtitle: Text(
-        "Hey there! I am using AquaTalk.",
-        style: TextStyle(
-          color: theme.isDark ? Colors.white70 : Colors.black54,
+        title: Text(
+          "AquaTalk User",
+          style: TextStyle(
+            color: theme.isDark ? Colors.white : Colors.black,
+          ),
         ),
-      ),
+        subtitle: Text(
+          "Tap to edit profile",
+          style: TextStyle(
+            color: theme.isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: UserService().getUser(uid),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+        final displayName = data?['name']?.toString() ?? 'AquaTalk User';
+        final about = data?['about']?.toString() ?? 'Tap to edit profile';
+        final profilePic = data?['profilePic']?.toString() ?? '';
+
+        return ListTile(
+          onTap: () => _openScreen(const ProfileScreen()),
+          leading: CircleAvatar(
+            backgroundColor: theme.isDark ? Colors.white : Colors.black,
+            backgroundImage: profilePic.isNotEmpty ? FileImage(File(profilePic)) : null,
+            child: profilePic.isEmpty
+                ? Icon(
+                    Icons.person,
+                    color: theme.isDark ? Colors.black : Colors.white,
+                  )
+                : null,
+          ),
+          title: Text(
+            displayName,
+            style: TextStyle(
+              color: theme.isDark ? Colors.white : Colors.black,
+            ),
+          ),
+          subtitle: Text(
+            about,
+            style: TextStyle(
+              color: theme.isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+        );
+      },
     );
   }
 
-  // ================= FOOTER =================
   Widget _buildFooterBranding(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
 
     return Column(
       children: [
-        Text(
-          "from",
-          style: TextStyle(
-            color: theme.isDark ? Colors.white54 : Colors.black54,
-          ),
-        ),
-        Text(
-          "JM",
-          style: TextStyle(
-            color: theme.isDark ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text("from",
+            style: TextStyle(
+                color: theme.isDark ? Colors.white54 : Colors.black54)),
+        Text("JM",
+            style: TextStyle(
+                color: theme.isDark ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -293,31 +405,6 @@ class _SettingsTabState extends State<SettingsTab> {
           color: theme.isDark ? Colors.white70 : Colors.black54,
           fontWeight: FontWeight.bold,
         ),
-      ),
-    );
-  }
-
-  // ================= LOGIC =================
-  void _navigateTo(BuildContext context, String screen) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Navigating to $screen")),
-    );
-  }
-
-  void _showFontSizePicker(BuildContext context, SettingsProvider settings) {}
-
-  void _showPrivacyControls(BuildContext context) {}
-
-  void _showLogoutDialog(BuildContext context) {}
-
-  Widget _buildSearchField(BuildContext context) {
-    return TextField(
-      controller: _searchController,
-      style: const TextStyle(color: Colors.black),
-      onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
-      decoration: const InputDecoration(
-        hintText: "Search settings...",
-        border: InputBorder.none,
       ),
     );
   }

@@ -1,13 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:aqua_talk/provider/chat_provider.dart';
-import '../widgets/chat_tile.dart';
-import '../models/chat_model.dart';
 
-// ================== FIREBASE IMPORTS (FUTURE USE) ==================
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
+import '../provider/chat_provider.dart';
+import '../models/chat_model.dart';
+import '../widgets/chat_tile.dart';
 
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});
@@ -18,97 +14,72 @@ class ChatTab extends StatefulWidget {
 
 class _ChatTabState extends State<ChatTab> {
   String search = "";
-  
-  // ✅ Filters state
-  String activeFilter = "All"; 
-  final List<String> filters = ["All", "Unread", "Favorites", "Groups"];
+  String activeFilter = "All";
+
+  final List<String> filters = [
+    "All",
+    "Unread",
+    "Group",
+    "Pinned",
+    "Favorite",
+  ];
 
   @override
   Widget build(BuildContext context) {
-    // Provider se real-time chats le rahe hain
-    final provider = context.watch<ChatProvider>();
+    final provider = context.read<ChatProvider>();
 
-    // ✅ Search + Filter logic
-    final filteredChats = provider.chats.where((c) {
-      bool matchesSearch = c.name.toLowerCase().contains(search.toLowerCase());
-      
-      if (activeFilter == "All") return matchesSearch;
-      
-      // Note: In fields ka ChatModel mein hona zaroori hai error se bachne ke liye
-      if (activeFilter == "Unread") return matchesSearch && (c.unreadCount > 0);
-      if (activeFilter == "Favorites") return matchesSearch && (c.isFavorite == true);
-      if (activeFilter == "Groups") return matchesSearch && (c.isGroup == true);
-      
-      return matchesSearch;
-    }).toList();
-
-    return Column(
-      children: [
-        /// ================== 1. SEARCH BAR ==================
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: TextField(
-            style: const TextStyle(color: Colors.grey), 
-            cursorColor: const Color(0xFF004D40),
-            decoration: InputDecoration(
-              hintText: "Search chats...",
-              hintStyle: const TextStyle(color: Colors.grey),
-              filled: true,
-              fillColor: const Color(0xFFF4F5F4).withValues(alpha: 0.1), 
-              prefixIcon: const Icon(Icons.search, color: Colors.black), 
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
-                borderSide: const BorderSide(color: Colors.white, width: 1),
+    return SafeArea(
+      child: Column(
+        children: [
+          // ================== SEARCH BAR (ALWAYS VISIBLE) ==================
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              onChanged: (val) => setState(() => search = val),
+              decoration: InputDecoration(
+                hintText: "Search chats...",
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.grey.shade200,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
-            onChanged: (val) {
-              setState(() {
-                search = val;
-              });
-            },
           ),
-        ),
 
-       
-
-        /// ✅ ================== 3. FILTER BUTTONS (Ab Stories ke neechy) ==================
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: SizedBox(
-            height: 38,
+          // ================== FILTERS (ALWAYS VISIBLE) ==================
+          SizedBox(
+            height: 45,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: filters.length,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemBuilder: (context, index) {
-                bool isSelected = activeFilter == filters[index];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        activeFilter = filters[index];
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF004D40) : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(20),
-                        border: isSelected ? null : Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Center(
-                        child: Text(
-                          filters[index],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 13,
-                          ),
+              itemBuilder: (context, i) {
+                final filter = filters[i];
+                final isSelected = activeFilter == filter;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      activeFilter = filter;
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected ? Colors.teal : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Text(
+                        filter,
+                        style: TextStyle(
+                          color:
+                              isSelected ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -117,75 +88,72 @@ class _ChatTabState extends State<ChatTab> {
               },
             ),
           ),
-        ),
 
-        const Divider(height: 1),
+          const Divider(height: 20),
 
-        /// ================== 4. CHAT LIST ==================
-      Expanded(
-  child: StreamBuilder<List<ChatModel>>(
-    stream: context.read<ChatProvider>().getChats(),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData) {
-        return const Center(child: CircularProgressIndicator());
-      }
+          // ================== CHAT LIST ONLY ==================
+          Expanded(
+            child: StreamBuilder<List<ChatModel>>(
+              stream: provider.getChats(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                      child: CircularProgressIndicator());
+                }
 
-      final chats = snapshot.data!;
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text("No chats found"));
+                }
 
-      final filteredChats = chats.where((c) {
-        bool matchesSearch =
-            c.name.toLowerCase().contains(search.toLowerCase());
+                final chats = snapshot.data!;
 
-        if (activeFilter == "All") return matchesSearch;
-        if (activeFilter == "Unread") return matchesSearch && (c.unreadCount > 0);
-        if (activeFilter == "Favorites") return matchesSearch && (c.isFavorite);
-        if (activeFilter == "Groups") return matchesSearch && (c.isGroup);
+                final filteredChats = chats.where((c) {
+                  final matchesSearch = c.name
+                      .toLowerCase()
+                      .contains(search.toLowerCase());
 
-        return matchesSearch;
-      }).toList();
+                  if (!matchesSearch) return false;
 
-      return filteredChats.isEmpty
-          ? _buildNoChatsFound()
-          : ListView.builder(
-              itemCount: filteredChats.length,
-              itemBuilder: (_, i) => ChatTile(
-                chat: filteredChats[i],
-                index: i,
-              ),
-            );
-    },
-  ),
-),
-      ],
-    );
-  }
+                  switch (activeFilter) {
+                    case "All":
+                      return true;
 
-  Widget _buildNoChatsFound() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search_off, size: 60, color: Colors.grey.shade400),
-          const SizedBox(height: 10),
-          Text("No results for '$search' in $activeFilter", style: const TextStyle(color: Colors.grey)),
+                    case "Unread":
+                      return c.unreadCount > 0;
+
+                    case "Group":
+                      return c.isGroup == true;
+
+                    case "Pinned":
+                      return c.isPinned == true;
+
+                    case "Favorite":
+                      return c.isFavorite == true;
+
+                    default:
+                      return true;
+                  }
+                }).toList();
+
+                return filteredChats.isEmpty
+                    ? const Center(child: Text("No chats found"))
+                    : ListView.builder(
+                        itemCount: filteredChats.length,
+                        itemBuilder: (context, index) {
+                          final chat = filteredChats[index];
+
+                          return ChatTile(
+                            chat: chat,
+                            index: index,
+                          );
+                        },
+                      );
+              },
+            ),
+          ),
         ],
       ),
     );
   }
-
-  // ================== FIREBASE FUNCTIONS (FUTURE USE) ==================
-  /*
-  void fetchChatsFromFirebase() {
-    // FirebaseFirestore.instance.collection('chats')
-    //     .where('participants', arrayContains: FirebaseAuth.instance.currentUser?.uid)
-    //     .snapshots();
-  }
-
-  void updateLastMessage(String chatId, String message) {
-    // FirebaseFirestore.instance.collection('chats').doc(chatId).update({
-    //   'lastMessage': message,
-    //   'timestamp': FieldValue.serverTimestamp(),
-    // });
-  }
-  */
 }

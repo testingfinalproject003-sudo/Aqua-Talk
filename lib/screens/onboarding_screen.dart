@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
 
 import 'login_screen.dart';
@@ -157,9 +158,13 @@ const TextSpan(
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
+                    onPressed: () async {
+                      final navigator = Navigator.of(context);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('seenOnboarding', true);
+
+                      if (!mounted) return;
+                      navigator.pushReplacement(
                         MaterialPageRoute(
                           builder: (_) => const LoginScreen(),
                         ),

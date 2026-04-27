@@ -4,10 +4,11 @@ import 'package:aqua_talk/tabs/chat_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-// Screens
+
 import '../provider/theme_provider.dart';
 import '../provider/gradient_provider.dart';
-
+import '../screens/contact_screen.dart';
+// import '../tabs/chat_tab.dart';
 
 import '../tabs/settings_tab.dart';
 
@@ -209,10 +210,8 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
       extendBody: true,
 
       // ---------------- APP BAR ----------------
-      appBar: currentIndex == 1
-          ? null
-          : AppBar(
-              backgroundColor: darkTeal,
+      appBar:  AppBar(
+              backgroundColor: const Color(0xFF004D40),
               elevation: 0,
               title: const Text(
                 "AquaTalk",
@@ -273,23 +272,35 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
 
       // ---------------- FAB ----------------
       floatingActionButton: currentIndex == 2
-          ? null
-          : FloatingActionButton(
-              backgroundColor:
-                  theme.isDark ? const Color(0xFF80CBC4) : darkTeal,
-              elevation: 4,
-              child: Icon(
-                currentIndex == 0
-                    ? Icons.message_rounded
-                    : Icons.camera_alt_rounded,
-                color: Colors.white,
+    ? null
+    : FloatingActionButton(
+        backgroundColor: theme.isDark
+            ? const Color(0xFF80CBC4)
+            : darkTeal,
+        elevation: 4,
+        child: Icon(
+          currentIndex == 0
+              ? Icons.message_rounded
+              : Icons.camera_alt_rounded,
+          color: Colors.white,
+        ),
+        onPressed: () {
+          // ================== CHAT TAB ==================
+          if (currentIndex == 0) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ContactScreen(),
               ),
-              onPressed: () {
-                if (currentIndex == 1) {
-                  _showGlassyCameraSheet(context);
-                }
-              },
-            ),
+            );
+          }
+
+          // ================== CAMERA TAB ==================
+          if (currentIndex == 1) {
+            _showGlassyCameraSheet(context);
+          }
+        },
+      ),
     );
   }
 }

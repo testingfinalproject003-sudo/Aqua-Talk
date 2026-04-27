@@ -1,4 +1,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- 🌐 Internet -->
+<uses-permission android:name="android.permission.INTERNET"/>
+
+<!-- 📶 Network State -->
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+<!-- 📞 Contacts (optional) -->
+<uses-permission android:name="android.permission.READ_CONTACTS"/>
+
+<!-- 📷 Camera -->
+<uses-permission android:name="android.permission.CAMERA"/>
+
+<!-- 🎤 Microphone (voice notes / calls) -->
+<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+<!-- 🖼️ Storage / Media (Android 13+) -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+
+<!-- 🖼️ Storage (older Android) -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+<!-- 📍 Location (optional) -->
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
+<!-- 🔔 Notifications (Android 13+) -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+
     <application
         android:label="aqua_talk"
         android:name="${applicationName}"

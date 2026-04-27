@@ -1,14 +1,109 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../models/chat_model.dart';
 import '../models/message_model.dart';
 import '../services/chat_service.dart';
-import '../models/chat_model.dart';
+
 class ChatProvider with ChangeNotifier {
   final ChatService _chatService = ChatService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // ================== CHATS ==================
-  final List<ChatModel> _chats = [];
+  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
-  List<ChatModel> get chats => _chats;
+  final List<ChatModel> dummyChats = [
+    ChatModel(
+      id: 'dummy1',
+      name: 'Aisha',
+      message: 'Let’s meet at 7pm tonight.',
+      time: DateTime.now().subtract(const Duration(minutes: 12)),
+      unread: 2,
+      avatar: '',
+      isOnline: true,
+      isPinned: false,
+      unreadCount: 2,
+      isFavorite: false,
+      isGroup: false,
+    ),
+    ChatModel(
+      id: 'dummy2',
+      name: 'Family Group',
+      message: 'Dinner starts soon. Don’t be late!',
+      time: DateTime.now().subtract(const Duration(hours: 1, minutes: 5)),
+      unread: 0,
+      avatar: '',
+      isOnline: false,
+      isPinned: true,
+      unreadCount: 0,
+      isFavorite: true,
+      isGroup: true,
+    ),
+    ChatModel(
+      id: 'dummy3',
+      name: 'Sara',
+      message: 'Thanks for the update. Sounds good!',
+      time: DateTime.now().subtract(const Duration(hours: 3, minutes: 22)),
+      unread: 0,
+      avatar: '',
+      isOnline: false,
+      isPinned: false,
+      unreadCount: 0,
+      isFavorite: false,
+      isGroup: false,
+    ),
+  ];
+
+  // ================== CHAT STREAM ==================
+  Stream<List<ChatModel>> getChats() {
+    if (_uid == null) return const Stream.empty();
+
+    return _firestore
+        .collection("chats")
+        .where("participants", arrayContains: _uid)
+        .snapshots()
+        .map((snapshot) {
+      final chats = snapshot.docs
+          .map((doc) => ChatModel.fromMap(doc.data(), doc.id))
+          .toList();
+
+      // 🔥 Add default data when Firestore is empty
+      if (chats.isEmpty) {
+        return List<ChatModel>.from(dummyChats);
+      }
+
+      chats.sort((a, b) => b.time.compareTo(a.time));
+      return chats;
+    });
+  }
+
+  // ================== CREATE CHAT ==================
+  Future<String> createOrGetChat(String otherUserId) async {
+    final myUid = _uid;
+    if (myUid == null) return "";
+
+    final query = await _firestore
+        .collection("chats")
+        .where("participants", arrayContains: myUid)
+        .get();
+
+    for (var doc in query.docs) {
+      final participants = List.from(doc["participants"]);
+      if (participants.contains(otherUserId)) {
+        return doc.id;
+      }
+    }
+
+    final newChat = await _firestore.collection("chats").add({
+      "participants": [myUid, otherUserId],
+      "lastMessage": "",
+      "updatedAt": FieldValue.serverTimestamp(),
+      "isPinned": false,
+      "unreadCount": 0,
+    });
+
+    return newChat.id;
+  }
 
   // ================== SEND MESSAGE ==================
   Future<void> sendMessage({
@@ -17,87 +112,39 @@ class ChatProvider with ChangeNotifier {
     required String senderId,
     required String receiverId,
   }) async {
+    final messageId =
+        DateTime.now().millisecondsSinceEpoch.toString();
+
     final message = MessageModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: messageId,
       senderId: senderId,
       receiverId: receiverId,
       text: text,
-      isMe: true,
+      isMe: senderId == _uid,
       time: DateTime.now(),
       reactions: {},
     );
-
-    _chats.add(
-  ChatModel(
-    id: message.senderId,
-    name: "User",
-    message: message.text,
-    time: message.time.toString(),
-    unread: 0,
-    unreadCount: 0,
-    avatar: "",
-    isOnline: false,
-  ),
-);
 
     await _chatService.sendMessage(
       chatId: chatId,
       message: message,
     );
 
-    notifyListeners();
+    await _firestore.collection("chats").doc(chatId).update({
+      "lastMessage": text,
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
   }
 
-  // ================== ADD REACTION ==================
-  Future<void> addReaction({
-    required String chatId,
-    required String messageId,
-    required String emoji,
-    required String uid,
-  }) async {
-    await _chatService.addReaction(
-      chatId: chatId,
-      messageId: messageId,
-      emoji: emoji,
-      uid: uid,
-    );
-
-    notifyListeners();
+  // ================== DELETE CHAT ==================
+  Future<void> deleteChat(String chatId) async {
+    await _firestore.collection("chats").doc(chatId).delete();
   }
 
-  // ================== REMOVE REACTION ==================
-  Future<void> removeReaction({
-    required String chatId,
-    required String messageId,
-    required String emoji,
-    required String uid,
-  }) async {
-    await _chatService.removeReaction(
-      chatId: chatId,
-      messageId: messageId,
-      emoji: emoji,
-      uid: uid,
-    );
-
-    notifyListeners();
+  // ================== PIN CHAT ==================
+  Future<void> togglePin(String chatId, bool current) async {
+    await _firestore.collection("chats").doc(chatId).update({
+      "isPinned": !current,
+    });
   }
-  // ===========Delete Chats===========
-  void deleteChat(String id) {
-  _chats.removeWhere((chat) => chat.id == id);
-  notifyListeners();
-}
-// =======TogglePin========
-void togglePin(String id) {
-  final index = _chats.indexWhere((chat) => chat.id == id);
-
-  if (index != -1) {
-    _chats[index].isPinned = !_chats[index].isPinned;
-    notifyListeners();
-  }
-}
-Stream<List<ChatModel>> getChats() {
-  return _chatService.getChats().map((data) {
-    return data.map((e) => e).toList();
-  });
-}
 }
