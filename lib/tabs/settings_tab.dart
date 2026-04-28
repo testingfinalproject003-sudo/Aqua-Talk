@@ -10,10 +10,10 @@ import '../provider/theme_provider.dart';
 import '../services/user_service.dart';
 
 import '../screens/profile_screen.dart';
-import '../screens/account_screen.dart';
-import '../screens/privacy_screen.dart';
+import '../screens/setting/account_screen.dart';
+import '../screens/setting/privacy_screen.dart';
 import '../screens/favorite_screen.dart';
-import '../screens/login_screen.dart';
+import '../screens/login/login_screen.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'chat_screen.dart';
+import 'chat/chat_screen.dart';
 import '../provider/gradient_provider.dart';
 
 class ContactScreen extends StatefulWidget {

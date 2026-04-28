@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../provider/chat_provider.dart';
 import '../../models/chat_model.dart';
-import '../../screens/chat_screen.dart';
+import '../screens/chat/chat_screen.dart';
 
 class ChatTile extends StatelessWidget {
   final ChatModel chat;

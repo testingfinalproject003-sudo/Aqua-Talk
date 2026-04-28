@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
 import 'home_screen.dart';
-import 'login_screen.dart';
+import 'login/login_screen.dart';
 import 'onboarding_screen.dart';
 import 'profile_setup_screen.dart';
 
@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigateFromSplash() async {
     final navigator = Navigator.of(context);
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 1));
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();

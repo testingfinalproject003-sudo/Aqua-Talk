@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../provider/message_provider.dart';
-import '../provider/chat_selection_provider.dart';
-import '../widgets/emoji_picker_widget.dart';
+import '../../provider/message_provider.dart';
+import '../../provider/chat_selection_provider.dart';
+import '../../widgets/emoji_picker_widget.dart';
 
 class MessageBubble extends StatelessWidget {
   final String text;

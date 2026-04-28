@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 
 // ================== SCREENS ==================
 import 'screens/splash_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/profile_setup_screen.dart';
 
 // ================== PROVIDERS ==================
 import 'provider/chat_provider.dart';
@@ -19,12 +15,8 @@ import 'provider/chat_selection_provider.dart';
 
 // ================== FIREBASE ==================
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
-// ================== SERVICES ==================
-import 'services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -100,98 +92,98 @@ class MaterialAppRoot extends StatelessWidget {
   }
 }
 
-/// ================== AUTH WRAPPER (SAFE) ==================
-class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({super.key});
+// /// ================== AUTH WRAPPER (SAFE) ==================
+// class AuthWrapper extends StatefulWidget {
+//   const AuthWrapper({super.key});
 
-  @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
-}
+//   @override
+//   State<AuthWrapper> createState() => _AuthWrapperState();
+// }
 
-class _AuthWrapperState extends State<AuthWrapper> {
-  bool initialized = false;
-  bool seenOnboarding = false;
+// class _AuthWrapperState extends State<AuthWrapper> {
+//   bool initialized = false;
+//   bool seenOnboarding = false;
 
-  @override
-  void initState() {
-    super.initState();
-    initUser();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     initUser();
+//   }
 
-  /// ✅ SAFE USER SYNC (NO Firebase crash)
-  Future<void> initUser() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
+//   /// ✅ SAFE USER SYNC (NO Firebase crash)
+//   Future<void> initUser() async {
+//     try {
+//       final prefs = await SharedPreferences.getInstance();
+//       seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
 
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await UserService().createOrUpdateUser(user);
-      }
-    } catch (e) {
-      debugPrint("User init error: $e");
-    }
+//       final user = FirebaseAuth.instance.currentUser;
+//       if (user != null) {
+//         await UserService().createOrUpdateUser(user);
+//       }
+//     } catch (e) {
+//       debugPrint("User init error: $e");
+//     }
 
-    if (!mounted) return;
-    setState(() {
-      initialized = true;
-    });
-  }
+//     if (!mounted) return;
+//     setState(() {
+//       initialized = true;
+//     });
+//   }
 
-  bool _needsProfileSetup(Map<String, dynamic> data) {
-    final name = (data['name'] ?? '').toString();
-    final about = (data['about'] ?? '').toString();
-    return name.isEmpty || about.isEmpty;
-  }
+//   bool _needsProfileSetup(Map<String, dynamic> data) {
+//     final name = (data['name'] ?? '').toString();
+//     final about = (data['about'] ?? '').toString();
+//     return name.isEmpty || about.isEmpty;
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!initialized) {
-      return const SplashScreen();
-    }
+//   @override
+//   Widget build(BuildContext context) {
+//     // if (!initialized) {
+//     //   return const SplashScreen();
+//     // }
 
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
+//     return StreamBuilder<User?>(
+//       stream: FirebaseAuth.instance.authStateChanges(),
+//       builder: (context, snapshot) {
 
-        // 🔄 loading
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SplashScreen();
-        }
+//         // 🔄 loading
+//         if (snapshot.connectionState == ConnectionState.waiting) {
+//           return const SplashScreen();
+//         }
 
-        if (snapshot.hasData) {
-          final user = snapshot.data!;
-          return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: UserService().getUser(user.uid),
-            builder: (context, userSnapshot) {
-              if (userSnapshot.connectionState == ConnectionState.waiting) {
-                return const SplashScreen();
-              }
+//         if (snapshot.hasData) {
+//           final user = snapshot.data!;
+//           return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+//             stream: UserService().getUser(user.uid),
+//             builder: (context, userSnapshot) {
+//               if (userSnapshot.connectionState == ConnectionState.waiting) {
+//                 return const SplashScreen();
+//               }
 
-              final userDoc = userSnapshot.data;
-              if (userDoc == null || !userDoc.exists) {
-                return ProfileSetupScreen(
-                  uid: user.uid,
-                  phoneNumber: user.phoneNumber ?? '',
-                );
-              }
+//               final userDoc = userSnapshot.data;
+//               if (userDoc == null || !userDoc.exists) {
+//                 return ProfileSetupScreen(
+//                   uid: user.uid,
+//                   phoneNumber: user.phoneNumber ?? '',
+//                 );
+//               }
 
-              final data = userDoc.data() ?? <String, dynamic>{};
-              if (_needsProfileSetup(data)) {
-                return ProfileSetupScreen(
-                  uid: user.uid,
-                  phoneNumber: user.phoneNumber ?? '',
-                );
-              }
+//               final data = userDoc.data() ?? <String, dynamic>{};
+//               if (_needsProfileSetup(data)) {
+//                 return ProfileSetupScreen(
+//                   uid: user.uid,
+//                   phoneNumber: user.phoneNumber ?? '',
+//                 );
+//               }
 
-              return const AquaHomeScreen();
-            },
-          );
-        }
+//               return const AquaHomeScreen();
+//             },
+//           );
+//         }
 
-        // ❌ not logged in
-        return seenOnboarding ? const LoginScreen() : const OnboardingScreen();
-      },
-    );
-  }
-}
+//         // ❌ not logged in
+//         return seenOnboarding ? const LoginScreen() : const OnboardingScreen();
+//       },
+//     );
+//   }
+// }
