@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
 
-import 'login/login_screen.dart';
-import 'login/privacy_policy_screen.dart';
-import 'login/terms_screen.dart';
+import 'login_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

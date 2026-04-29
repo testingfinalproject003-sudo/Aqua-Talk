@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // 🔥 Firebase Import Enabled
 import 'package:aqua_talk/provider/gradient_provider.dart';
-import '../splash_screen.dart';
+import 'splash_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   // 🔥 Receives data from LoginScreen

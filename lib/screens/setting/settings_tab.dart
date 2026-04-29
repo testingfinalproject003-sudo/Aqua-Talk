@@ -5,15 +5,15 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../provider/settings_provider.dart';
-import '../provider/theme_provider.dart';
-import '../services/user_service.dart';
+import 'package:aqua_talk/provider/settings_provider.dart';
+import 'package:aqua_talk/provider/theme_provider.dart';
+import 'package:aqua_talk/services/user_service.dart';
 
-import '../screens/profile_screen.dart';
-import '../screens/setting/account_screen.dart';
-import '../screens/setting/privacy_screen.dart';
-import '../screens/favorite_screen.dart';
-import '../screens/login/login_screen.dart';
+import 'package:aqua_talk/screens/setting/profile_screen.dart';
+import 'package:aqua_talk/screens/setting/account_screen.dart';
+import 'package:aqua_talk/screens/setting/privacy_screen.dart';
+import 'package:aqua_talk/screens/setting/favorite_screen.dart';
+import 'package:aqua_talk/screens/login/login_screen.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});

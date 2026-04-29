@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // 🔥 Firebase Import
 import 'package:aqua_talk/provider/gradient_provider.dart';
 import 'otp_screen.dart';
-import '../splash_screen.dart';
+import '/screens/login/splash_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

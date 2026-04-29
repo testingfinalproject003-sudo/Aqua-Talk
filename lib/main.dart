@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 
 // ================== SCREENS ==================
-import 'screens/splash_screen.dart';
+import 'screens/login/splash_screen.dart';
 
 // ================== PROVIDERS ==================
 import 'provider/chat_provider.dart';

@@ -30,6 +30,7 @@ class ChatProvider with ChangeNotifier {
       isGroup: false,
       toggleFavorite: () {},
       markAsRead: () {},
+      
     ),
   ];
 
@@ -421,6 +422,137 @@ class ChatProvider with ChangeNotifier {
     await _firestore.collection('chats').doc(chatId).update({
       'chatLocked': locked,
     });
+  }
+
+  Future<void> sendMediaMessage({
+    required String chatId,
+    required String senderId,
+    required String receiverId,
+    required String mediaPath,
+    required bool isVideo,
+  }) async {
+    final messageId = DateTime.now().millisecondsSinceEpoch.toString();
+    final message = MessageModel(
+      id: messageId,
+      senderId: senderId,
+      receiverId: receiverId,
+      text: isVideo ? '[Video]' : '[Image]',
+      isMe: senderId == _uid,
+      time: DateTime.now(),
+      image: mediaPath,
+      reactions: {},
+    );
+
+    await _chatService.sendMessage(chatId: chatId, message: message);
+    await _updateChatMetadata(
+      chatId: chatId,
+      text: message.text,
+      senderId: senderId,
+      receiverId: receiverId,
+    );
+  }
+
+  Future<void> clearChat({
+    required String chatId,
+    required String uid,
+  }) async {
+    final query = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .get();
+
+    final batch = _firestore.batch();
+    for (final doc in query.docs) {
+      batch.update(doc.reference, {
+        'deletedFor': FieldValue.arrayUnion([uid]),
+      });
+    }
+
+    if (query.docs.isNotEmpty) {
+      await batch.commit();
+    }
+  }
+
+  Future<void> reportUser({
+    required String chatId,
+    required String reportedUserId,
+  }) async {
+    final reporterId = _uid;
+    if (reporterId == null) return;
+
+    await _firestore.collection('reports').add({
+      'chatId': chatId,
+      'reportedUserId': reportedUserId,
+      'reporterId': reporterId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> blockUser({
+    required String chatId,
+    required String blockedUserId,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return;
+
+    await _firestore.collection('users').doc(uid).set({
+      'blockedUsers': FieldValue.arrayUnion([blockedUserId]),
+    }, SetOptions(merge: true));
+
+    await _firestore.collection('chats').doc(chatId).update({
+      'blockedBy': FieldValue.arrayUnion([uid]),
+    });
+  }
+
+  Future<void> unblockUser({
+    required String chatId,
+    required String blockedUserId,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return;
+
+    await _firestore.collection('users').doc(uid).update({
+      'blockedUsers': FieldValue.arrayRemove([blockedUserId]),
+    });
+
+    await _firestore.collection('chats').doc(chatId).update({
+      'blockedBy': FieldValue.arrayRemove([uid]),
+    });
+  }
+
+  Future<void> applyDisappearingPolicy({
+    required String chatId,
+    required String mode,
+  }) async {
+    if (mode == 'off') return;
+
+    final duration = mode == '24h'
+        ? const Duration(hours: 24)
+        : const Duration(days: 7);
+    final threshold = DateTime.now().subtract(duration);
+
+    final query = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('timestamp', isLessThan: Timestamp.fromDate(threshold))
+        .get();
+
+    if (query.docs.isEmpty) return;
+
+    final batch = _firestore.batch();
+    for (final doc in query.docs) {
+      final data = doc.data();
+      if (data['isDeleted'] == true) continue;
+      batch.update(doc.reference, {
+        'isDeleted': true,
+        'text': 'This message disappeared',
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
   }
 
   // ================== SAVE DRAFT ==================

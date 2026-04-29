@@ -19,7 +19,7 @@ class ChatMenuOverlay {
   }) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.4),
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.4),
       builder: (_) {
         return Center(
           child: Material(
@@ -32,25 +32,25 @@ class ChatMenuOverlay {
                   width: 280,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.10),
+                    color: const Color.fromRGBO(255, 255, 255, 0.10),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.white24),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _item(Icons.person, "View Contact", onViewContact),
-                      _item(Icons.search, "Search Chat", onSearch),
-                      _item(Icons.perm_media, "Media / Links", onMedia),
-                      _item(Icons.palette, "Chat Theme", onTheme),
-                      _item(Icons.timer, "Disappearing Msg", onDisappearing),
-                      _item(Icons.image, "Gallery", onGallery),
+                      _item(context, Icons.person, "View Contact", onViewContact),
+                      _item(context, Icons.search, "Search Chat", onSearch),
+                      _item(context, Icons.perm_media, "Media / Links", onMedia),
+                      _item(context, Icons.palette, "Chat Theme", onTheme),
+                      _item(context, Icons.timer, "Disappearing Msg", onDisappearing),
+                      _item(context, Icons.image, "Gallery", onGallery),
 
                       const Divider(color: Colors.white30),
 
-                      _item(Icons.report, "Report User", onReport, color: Colors.red),
-                      _item(Icons.block, "Block User", onBlock, color: Colors.red),
-                      _item(Icons.delete, "Clear Chat", onClearChat, color: Colors.red),
+                      _item(context, Icons.report, "Report User", onReport, color: Colors.red),
+                      _item(context, Icons.block, "Block User", onBlock, color: Colors.red),
+                      _item(context, Icons.delete, "Clear Chat", onClearChat, color: Colors.red),
                     ],
                   ),
                 ),
@@ -63,6 +63,7 @@ class ChatMenuOverlay {
   }
 
   static Widget _item(
+    BuildContext context,
     IconData icon,
     String text,
     VoidCallback onTap, {
@@ -73,7 +74,7 @@ class ChatMenuOverlay {
       leading: Icon(icon, color: color, size: 20),
       title: Text(text, style: TextStyle(color: color, fontSize: 13)),
       onTap: () {
-        Navigator.pop(onTap as BuildContext);
+        Navigator.pop(context);
         onTap();
       },
     );
