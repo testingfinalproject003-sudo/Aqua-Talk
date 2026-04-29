@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../provider/story_provider.dart';
+import '../../provider/story_provider.dart';
 import 'package:aqua_talk/widgets/story_viewer.dart';
-import 'package:aqua_talk/tabs/settings_tab.dart';
+import 'package:aqua_talk/screens/setting/settings_tab.dart';
 import 'package:aqua_talk/widgets/glass_container.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
 class StoryScreen extends StatefulWidget {

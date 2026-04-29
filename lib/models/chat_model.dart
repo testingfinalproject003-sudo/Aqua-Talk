@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class ChatModel {
   final String id;
   final String name;
   final String message;
+  final String userId;
   final DateTime time;
 
   final int unread;
@@ -14,6 +17,15 @@ class ChatModel {
   final int unreadCount;
   final bool isFavorite;
   final bool isGroup;
+  final bool isArchived;
+  final String chatTheme;
+  final String bubbleStyle;
+  final bool hideLastSeen;
+  final bool readReceiptEnabled;
+  final bool chatLocked;
+  final String disappearingMode;
+  final VoidCallback toggleFavorite;
+  final VoidCallback markAsRead;
 
   ChatModel({
     required this.id,
@@ -22,16 +34,27 @@ class ChatModel {
     required this.time,
     required this.unread,
     required this.avatar,
+    required this.userId,
     this.isOnline = false,
     this.isPinned = false,
     this.unreadCount = 0,
     this.isFavorite = false,
     this.isGroup = false,
+    this.isArchived = false,
+    this.chatTheme = 'default',
+    this.bubbleStyle = 'default',
+    this.hideLastSeen = false,
+    this.readReceiptEnabled = true,
+    this.chatLocked = false,
+    this.disappearingMode = 'off',
+    required this.toggleFavorite,
+    required this.markAsRead,
   });
 
   factory ChatModel.fromMap(Map<String, dynamic> map, String id) {
     return ChatModel(
       id: id,
+      userId: map['userId'] ?? '',
       name: map['name'] ?? 'User',
       message: map['lastMessage'] ?? '',
       time: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -39,9 +62,33 @@ class ChatModel {
       avatar: map['avatar'] ?? '',
       isOnline: map['isOnline'] ?? false,
       isPinned: map['isPinned'] ?? false,
-      unreadCount: map['unreadCount'] ?? 0,
+      unreadCount: _parseUnreadCount(map['unreadCount']),
       isFavorite: map['isFavorite'] ?? false,
       isGroup: map['isGroup'] ?? false,
+      isArchived: map['isArchived'] ?? false,
+      chatTheme: map['chatTheme'] ?? 'default',
+      bubbleStyle: map['bubbleStyle'] ?? 'default',
+      hideLastSeen: map['hideLastSeen'] ?? false,
+      readReceiptEnabled: map['readReceiptEnabled'] ?? true,
+      chatLocked: map['chatLocked'] ?? false,
+      disappearingMode: map['disappearingMode'] ?? 'off',
+      toggleFavorite: () {},
+      markAsRead: () {},
     );
+  }
+
+  static int _parseUnreadCount(dynamic raw) {
+    if (raw is int) return raw;
+    if (raw is Map) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null && raw[uid] is int) {
+        return raw[uid] as int;
+      }
+      return raw.values.whereType<int>().fold(
+        0,
+        (prev, element) => prev + element,
+      );
+    }
+    return 0;
   }
 }

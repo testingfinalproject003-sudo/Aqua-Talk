@@ -1,8 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// ================== SETTINGS PROVIDER ==================
-/// App settings: font size and user preferences.
 class SettingsProvider with ChangeNotifier {
   double fontSize = 14.0;
 
@@ -11,7 +9,13 @@ class SettingsProvider with ChangeNotifier {
   }
 
   void setFontSize(double size) async {
-    fontSize = size;
+    // ✅ SAFE GUARD
+    if (size.isNaN || size.isInfinite || size <= 0) {
+      fontSize = 14.0;
+    } else {
+      fontSize = size;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('fontSize', fontSize);
     notifyListeners();
@@ -23,7 +27,16 @@ class SettingsProvider with ChangeNotifier {
 
   Future<void> loadFontSize() async {
     final prefs = await SharedPreferences.getInstance();
-    fontSize = prefs.getDouble('fontSize') ?? 14.0;
+
+    final saved = prefs.getDouble('fontSize');
+
+    // ✅ IMPORTANT SAFETY CHECK
+    if (saved == null || saved <= 0 || saved.isNaN || saved.isInfinite) {
+      fontSize = 14.0;
+    } else {
+      fontSize = saved;
+    }
+
     notifyListeners();
   }
 }

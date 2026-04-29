@@ -1,16 +1,16 @@
 import 'dart:ui';
-import 'package:aqua_talk/screens/story_screen.dart';
-import 'package:aqua_talk/tabs/chat_tab.dart';
+import 'package:aqua_talk/screens/story/story_screen.dart';
+import 'package:aqua_talk/screens/chats/chat_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../provider/theme_provider.dart';
-import '../provider/gradient_provider.dart';
-import '../screens/contact_screen.dart';
+import '../../provider/theme_provider.dart';
+import '../../provider/gradient_provider.dart';
+import '../setting/contact_screen.dart';
 // import '../tabs/chat_tab.dart';
 
-import '../tabs/settings_tab.dart';
+import '../setting/settings_tab.dart';
 
 class AquaHomeScreen extends StatefulWidget {
   const AquaHomeScreen({super.key});

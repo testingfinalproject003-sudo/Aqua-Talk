@@ -125,11 +125,10 @@ class ChatService {
     });
   }
 
-  // ================== EDIT MESSAGE ==================
-  Future<void> editMessage({
+  // ================== DELETE FOR EVERYONE ==================
+  Future<void> deleteMessageForEveryone({
     required String chatId,
     required String messageId,
-    required String newText,
   }) async {
     await _firestore
         .collection("chats")
@@ -137,9 +136,124 @@ class ChatService {
         .collection("messages")
         .doc(messageId)
         .update({
+      "isDeleted": true,
+      "text": "This message was deleted for everyone",
+      "deletedForEveryone": true,
+      "deletedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ================== DELETE FOR ME ==================
+  Future<void> deleteMessageForMe({
+    required String chatId,
+    required String messageId,
+    required String uid,
+  }) async {
+    await _firestore
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .doc(messageId)
+        .update({
+      "deletedFor": FieldValue.arrayUnion([uid]),
+    });
+  }
+
+  // ================== PIN MESSAGE ==================
+  Future<void> pinMessage({
+    required String chatId,
+    required String messageId,
+    required bool isPinned,
+  }) async {
+    await _firestore
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .doc(messageId)
+        .update({
+      "isPinned": !isPinned,
+    });
+  }
+
+  // ================== STAR MESSAGE ==================
+  Future<void> starMessage({
+    required String chatId,
+    required String messageId,
+    required bool isStarred,
+  }) async {
+    await _firestore
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .doc(messageId)
+        .update({
+      "isStarred": !isStarred,
+    });
+  }
+
+  // ================== EDIT MESSAGE ==================
+  Future<void> editMessage({
+    required String chatId,
+    required String messageId,
+    required String newText,
+  }) async {
+    final messageRef = _firestore
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .doc(messageId);
+
+    final messageDoc = await messageRef.get();
+    final previousText = messageDoc.data()?['text'] ?? '';
+    final history = (messageDoc.data()?['editHistory'] as List?)
+            ?.map((e) => Map<String, dynamic>.from(e))
+            .toList() ??
+        [];
+
+    history.add({
+      'text': previousText,
+      'editedAt': FieldValue.serverTimestamp(),
+    });
+
+    await messageRef.update({
       "text": newText,
       "isEdited": true,
       "editedAt": FieldValue.serverTimestamp(),
+      "editHistory": history,
+    });
+  }
+
+  // ================== SEND DELAYED MESSAGE ==================
+  Future<void> sendPendingMessage({
+    required String chatId,
+    required MessageModel message,
+  }) async {
+    final messageRef = _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(message.id);
+
+    await messageRef.set(message.toMap());
+  }
+
+  // ================== FINALIZE PENDING MESSAGE ==================
+  Future<void> finalizePendingMessage({
+    required String chatId,
+    required String messageId,
+    required String text,
+    required bool isSilent,
+  }) async {
+    await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'isPending': false,
+      'text': text,
+      'isSilent': isSilent,
+      'timestamp': FieldValue.serverTimestamp(),
     });
   }
 }

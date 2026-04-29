@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../provider/theme_provider.dart';
-import '../services/user_service.dart';
+import '../../provider/theme_provider.dart';
+import '../../services/user_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

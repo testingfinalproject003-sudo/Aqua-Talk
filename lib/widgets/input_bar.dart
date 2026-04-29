@@ -4,7 +4,17 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart'; // ✅ terminal
 
 class InputBar extends StatefulWidget {
   final Function(String) onSend;
-  const InputBar({required this.onSend, super.key});
+  final String? initialDraft;
+  final ValueChanged<String>? onDraftChanged;
+  final ValueChanged<bool>? onTyping;
+
+  const InputBar({
+    required this.onSend,
+    this.initialDraft,
+    this.onDraftChanged,
+    this.onTyping,
+    super.key,
+  });
 
   @override
   State<InputBar> createState() => _InputBarState();
@@ -16,14 +26,22 @@ class _InputBarState extends State<InputBar> {
   bool isTyping = false;
   bool showEmoji = false;
   bool isRecording = false;
+  bool isLockedRecording = false;
+  double dragX = 0.0;
+  double dragY = 0.0;
+  double playbackSpeed = 1.0;
 
   @override
   void initState() {
     super.initState();
+    controller.text = widget.initialDraft ?? '';
     controller.addListener(() {
+      final typing = controller.text.trim().isNotEmpty;
       setState(() {
-        isTyping = controller.text.trim().isNotEmpty;
+        isTyping = typing;
       });
+      widget.onDraftChanged?.call(controller.text);
+      widget.onTyping?.call(typing);
     });
 
     // Keyboard khulne par emoji band karne ke liye
@@ -34,16 +52,42 @@ class _InputBarState extends State<InputBar> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant InputBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialDraft != null &&
+        widget.initialDraft != oldWidget.initialDraft) {
+      controller.text = widget.initialDraft!;
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    focusNode.dispose();
+    super.dispose();
+  }
+
   // --- Voice Clip Logic ---
   void _startRecording() {
     setState(() => isRecording = true);
     debugPrint("Recording Started...");
   }
 
-  void _stopRecording() {
-    setState(() => isRecording = false);
+  void _stopRecording({bool cancel = false}) {
+    setState(() {
+      isRecording = false;
+      isLockedRecording = false;
+    });
+    if (cancel) {
+      debugPrint("Recording canceled.");
+      return;
+    }
     debugPrint("Recording Stopped & Sent.");
-    // Aap yahan actual voice message send karne ka function call kar sakte hain
+    final voicePlaceholder =
+        '[Voice message • ${playbackSpeed == 1.0 ? '1x' : '${playbackSpeed}x'}]';
+    widget.onSend(voicePlaceholder);
+    controller.clear();
   }
 
   // --- Glassy Attachment Menu ---
@@ -58,7 +102,7 @@ class _InputBarState extends State<InputBar> {
             height: 300,
             margin: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: const Color(0xFF004D40).withValues(alpha:  0.9),
+              color: const Color(0xFF004D40).withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(25),
               border: Border.all(color: Colors.white10),
             ),
@@ -67,12 +111,50 @@ class _InputBarState extends State<InputBar> {
               padding: const EdgeInsets.all(20),
               mainAxisSpacing: 20,
               children: [
-                _buildActionItem(Icons.insert_drive_file, "Document", Colors.indigo),
-                _buildActionItem(Icons.camera_alt, "Camera", Colors.pink),
-                _buildActionItem(Icons.photo, "Gallery", Colors.purple),
-                _buildActionItem(Icons.headset, "Audio", Colors.orange),
-                _buildActionItem(Icons.location_on, "Location", Colors.green),
-                _buildActionItem(Icons.person, "Contact", Colors.blue),
+                _buildActionItem(
+                  Icons.insert_drive_file,
+                  "Document",
+                  Colors.indigo,
+                  () {
+                    Navigator.pop(context);
+                  },
+                ),
+                _buildActionItem(Icons.camera_alt, "Camera", Colors.pink, () {
+                  Navigator.pop(context);
+                }),
+                _buildActionItem(Icons.photo, "Gallery", Colors.purple, () {
+                  Navigator.pop(context);
+                }),
+                _buildActionItem(Icons.headset, "Audio", Colors.orange, () {
+                  Navigator.pop(context);
+                }),
+                _buildActionItem(
+                  Icons.location_on,
+                  "Location",
+                  Colors.green,
+                  () {
+                    Navigator.pop(context);
+                  },
+                ),
+                _buildActionItem(Icons.person, "Contact", Colors.blue, () {
+                  Navigator.pop(context);
+                }),
+                _buildActionItem(Icons.mic, "Voice to Text", Colors.teal, () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Voice to text will be available soon.'),
+                    ),
+                  );
+                }),
+                _buildActionItem(Icons.poll, "Poll", Colors.deepPurple, () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Poll creation is coming soon.'),
+                    ),
+                  );
+                }),
               ],
             ),
           ),
@@ -81,17 +163,28 @@ class _InputBarState extends State<InputBar> {
     );
   }
 
-  Widget _buildActionItem(IconData icon, String label, Color color) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 28,
-          backgroundColor: color,
-          child: Icon(icon, color: Colors.white, size: 26),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-      ],
+  Widget _buildActionItem(
+    IconData icon,
+    String label,
+    Color color, [
+    VoidCallback? onTap,
+  ]) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: color,
+            child: Icon(icon, color: Colors.white, size: 26),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 
@@ -105,16 +198,11 @@ class _InputBarState extends State<InputBar> {
           setState(() {
             showEmoji = false;
           });
-         
         }
-        
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildInputBarUI(),
-          if (showEmoji) _buildEmojiPicker(),
-        ],
+        children: [_buildInputBarUI(), if (showEmoji) _buildEmojiPicker()],
       ),
     );
   }
@@ -126,7 +214,7 @@ class _InputBarState extends State<InputBar> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF004D40).withValues(alpha:  0.95),
+            color: const Color(0xFF004D40).withValues(alpha: 0.95),
           ),
           child: SafeArea(
             child: Row(
@@ -149,8 +237,13 @@ class _InputBarState extends State<InputBar> {
                   child: isRecording
                       ? const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text("Recording Voice... 0:01",
-                              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            "Recording Voice... 0:01",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         )
                       : TextField(
                           focusNode: focusNode,
@@ -160,7 +253,9 @@ class _InputBarState extends State<InputBar> {
                             hintText: "Message",
                             hintStyle: TextStyle(color: Colors.white54),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
                           ),
                         ),
                 ),
@@ -169,10 +264,66 @@ class _InputBarState extends State<InputBar> {
                     icon: const Icon(Icons.attach_file, color: Colors.white70),
                     onPressed: () => _showAttachmentMenu(context),
                   ),
+                if (!isRecording)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (playbackSpeed == 1.0) {
+                          playbackSpeed = 1.5;
+                        } else if (playbackSpeed == 1.5) {
+                          playbackSpeed = 2.0;
+                        } else {
+                          playbackSpeed = 1.0;
+                        }
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white12,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        playbackSpeed == 1.0
+                            ? '1x'
+                            : playbackSpeed == 1.5
+                                ? '1.5x'
+                                : '2x',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
                 const SizedBox(width: 8),
                 GestureDetector(
+                  onHorizontalDragUpdate: (details) {
+                    dragX += details.delta.dx;
+                    dragY += details.delta.dy;
+                  },
+                  onHorizontalDragEnd: (_) {
+                    if (isRecording && dragX < -60) {
+                      _stopRecording(cancel: true);
+                    }
+                    dragX = 0;
+                    dragY = 0;
+                  },
+                  onVerticalDragEnd: (_) {
+                    if (isRecording && dragY < -80) {
+                      setState(() => isLockedRecording = true);
+                    }
+                    dragX = 0;
+                    dragY = 0;
+                  },
                   onLongPress: !isTyping ? _startRecording : null,
-                  onLongPressUp: isRecording ? _stopRecording : null,
+                  onLongPressUp: isRecording && !isLockedRecording
+                      ? _stopRecording
+                      : null,
                   onTap: () {
                     if (isTyping) {
                       widget.onSend(controller.text);
@@ -180,10 +331,16 @@ class _InputBarState extends State<InputBar> {
                     }
                   },
                   child: CircleAvatar(
-                    backgroundColor: isRecording ? Colors.red : const Color(0xFF46A59C),
+                    backgroundColor: isRecording
+                        ? Colors.red
+                        : const Color(0xFF46A59C),
                     radius: 22,
                     child: Icon(
-                      isTyping ? Icons.send : Icons.mic,
+                      isTyping
+                          ? Icons.send
+                          : isLockedRecording
+                          ? Icons.lock
+                          : Icons.mic,
                       color: Colors.white,
                       size: 20,
                     ),
@@ -206,7 +363,6 @@ class _InputBarState extends State<InputBar> {
             controller.text = controller.text + emoji.emoji;
           });
         },
-        
       ),
     );
   }

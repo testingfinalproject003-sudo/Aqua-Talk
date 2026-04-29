@@ -14,9 +14,14 @@ class MessageModel {
   final bool isDeleted;
   final bool isPinned;
   final bool isStarred;
+  final bool isSilent;
+  final bool isPending;
   final String? replyTo;
+  final String? replyText;
+  final DateTime? editedAt;
+  final List<Map<String, dynamic>> editHistory;
+  final List<String> deletedFor;
   final DateTime? scheduledTime;
-
   final Map<String, List<String>> reactions;
 
   MessageModel({
@@ -32,7 +37,13 @@ class MessageModel {
     this.isDeleted = false,
     this.isPinned = false,
     this.isStarred = false,
+    this.isSilent = false,
+    this.isPending = false,
     this.replyTo,
+    this.replyText,
+    this.editedAt,
+    this.editHistory = const [],
+    this.deletedFor = const [],
     this.scheduledTime,
     this.reactions = const {},
   });
@@ -56,11 +67,25 @@ class MessageModel {
       isDeleted: map['isDeleted'] ?? false,
       isPinned: map['isPinned'] ?? false,
       isStarred: map['isStarred'] ?? false,
-
+      isSilent: map['isSilent'] ?? false,
+      isPending: map['isPending'] ?? false,
+      replyTo: map['replyTo'],
+      replyText: map['replyText'],
+      editedAt: map['editedAt'] != null
+          ? (map['editedAt'] as Timestamp).toDate()
+          : null,
+      editHistory: (map['editHistory'] != null && map['editHistory'] is List)
+          ? List<Map<String, dynamic>>.from(
+              (map['editHistory'] as List)
+                  .map((e) => Map<String, dynamic>.from(e)),
+            )
+          : [],
+      deletedFor: (map['deletedFor'] != null)
+          ? List<String>.from(map['deletedFor'] as List)
+          : [],
       scheduledTime: map['scheduledTime'] != null
           ? (map['scheduledTime'] as Timestamp).toDate()
           : null,
-
       reactions: (map['reactions'] != null)
           ? Map<String, List<String>>.from(
               (map['reactions'] as Map).map(
@@ -91,7 +116,13 @@ class MessageModel {
       'isDeleted': isDeleted,
       'isPinned': isPinned,
       'isStarred': isStarred,
+      'isSilent': isSilent,
+      'isPending': isPending,
       'replyTo': replyTo,
+      'replyText': replyText,
+      'editedAt': editedAt != null ? Timestamp.fromDate(editedAt!) : null,
+      'editHistory': editHistory,
+      'deletedFor': deletedFor,
 
       'scheduledTime':
           scheduledTime != null ? Timestamp.fromDate(scheduledTime!) : null,
