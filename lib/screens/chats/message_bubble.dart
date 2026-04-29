@@ -50,19 +50,32 @@ class MessageBubble extends StatelessWidget {
     this.onDoubleTap,
   });
 
-  List<TextSpan> _buildHighlightedText(String value, String query, TextStyle style) {
+  List<TextSpan> _buildHighlightedText(
+    String value,
+    String query,
+    TextStyle style,
+  ) {
     final pattern = RegExp(RegExp.escape(query), caseSensitive: false);
     final spans = <TextSpan>[];
     int startIndex = 0;
 
     for (final match in pattern.allMatches(value)) {
       if (match.start > startIndex) {
-        spans.add(TextSpan(text: value.substring(startIndex, match.start), style: style));
+        spans.add(
+          TextSpan(
+            text: value.substring(startIndex, match.start),
+            style: style,
+          ),
+        );
       }
-      spans.add(TextSpan(
-        text: value.substring(match.start, match.end),
-        style: style.copyWith(backgroundColor: const Color.fromRGBO(255, 255, 0, 0.4)),
-      ));
+      spans.add(
+        TextSpan(
+          text: value.substring(match.start, match.end),
+          style: style.copyWith(
+            backgroundColor: const Color.fromRGBO(255, 255, 0, 0.4),
+          ),
+        ),
+      );
       startIndex = match.end;
     }
 
@@ -74,7 +87,8 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildTextWidget() {
-    if (highlightQuery != null && highlightQuery!.isNotEmpty &&
+    if (highlightQuery != null &&
+        highlightQuery!.isNotEmpty &&
         text.toLowerCase().contains(highlightQuery!.toLowerCase())) {
       return RichText(
         text: TextSpan(
@@ -112,6 +126,7 @@ class MessageBubble extends StatelessWidget {
           context.read<ChatSelectionProvider>().toggleSelection(messageId);
           return;
         }
+
         context.read<ChatSelectionProvider>().toggleSelection(messageId);
         onLongPressAction?.call();
       },
@@ -123,14 +138,18 @@ class MessageBubble extends StatelessWidget {
       child: Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
         child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             if (isSelected)
               Container(
                 margin: const EdgeInsets.only(bottom: 6, left: 10, right: 10),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isMe ? const Color.fromRGBO(255, 255, 255, 0.95) : Colors.grey.shade100,
+                  color: isMe
+                      ? const Color.fromRGBO(255, 255, 255, 0.95)
+                      : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
@@ -147,8 +166,14 @@ class MessageBubble extends StatelessWidget {
                       GestureDetector(
                         onTap: () => onReact?.call(emoji),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          child: Text(emoji, style: const TextStyle(fontSize: 18)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 18),
+                          ),
                         ),
                       ),
                   ],
@@ -160,22 +185,26 @@ class MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? const Color.fromRGBO(33, 150, 243, 0.25)
+                    : bubbleStyle == 'gradient'
+                    ? null
                     : isMe
-                        ? const Color.fromRGBO(0, 77, 64, 0.8)
-                        : Colors.grey.shade200,
+                    ? const Color.fromRGBO(0, 77, 64, 0.8)
+                    : Colors.grey.shade200,
                 gradient: isSelected
                     ? null
                     : bubbleStyle == 'gradient'
-                        ? LinearGradient(
-                            colors: isMe
-                                ? const [Color(0xFF004D40), Color(0xFF00796B)]
-                                : const [Color(0xFFE0F2F1), Color(0xFFB2DFDB)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
+                    ? LinearGradient(
+                        colors: isMe
+                            ? const [Color(0xFF004D40), Color(0xFF00796B)]
+                            : const [Color(0xFFE0F2F1), Color(0xFFB2DFDB)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
                 borderRadius: bubbleStyle == 'ios'
                     ? BorderRadius.circular(22)
+                    : bubbleStyle == 'rounded'
+                    ? BorderRadius.circular(20)
                     : BorderRadius.circular(12),
                 border: bubbleStyle == 'minimal'
                     ? Border.all(color: Colors.grey.shade400, width: 0.5)
@@ -211,28 +240,38 @@ class MessageBubble extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.play_arrow, color: Colors.white),
+                                  const Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                  ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       'Video attachment',
-                                      style: TextStyle(color: isMe ? Colors.white : Colors.black),
+                                      style: TextStyle(
+                                        color: isMe
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             )
                           : image!.toLowerCase().startsWith('http')
-                              ? Image.network(image!, fit: BoxFit.cover)
-                              : File(image!).existsSync()
-                                  ? Image.file(File(image!), fit: BoxFit.cover)
-                                  : Container(
-                                      height: 120,
-                                      color: Colors.black12,
-                                      child: const Center(
-                                        child: Icon(Icons.broken_image, color: Colors.white60),
-                                      ),
-                                    ),
+                          ? Image.network(image!, fit: BoxFit.cover)
+                          : File(image!).existsSync()
+                          ? Image.file(File(image!), fit: BoxFit.cover)
+                          : Container(
+                              height: 120,
+                              color: Colors.black12,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.white60,
+                                ),
+                              ),
+                            ),
                     ),
                   if (hasImage) const SizedBox(height: 10),
                   _buildTextWidget(),
@@ -250,7 +289,10 @@ class MessageBubble extends StatelessWidget {
                           padding: EdgeInsets.only(left: 6),
                           child: Text(
                             'Sending...',
-                            style: TextStyle(fontSize: 10, color: Colors.white70),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white70,
+                            ),
                           ),
                         ),
                       if (isPinned)

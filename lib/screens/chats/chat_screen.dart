@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,6 +21,7 @@ class ChatScreen extends StatefulWidget {
   final String userImage;
   final bool isOnline;
   final String userId;
+  
 
   const ChatScreen({
     super.key,
@@ -65,14 +67,22 @@ class _ChatScreenState extends State<ChatScreen> {
     return "${d.hour}:${d.minute.toString().padLeft(2, '0')}";
   }
 
-  PreferredSizeWidget _buildAppBar({required bool hasSelection}) {
+  PreferredSizeWidget _buildAppBar({
+    required bool hasSelection,
+    String status = '',
+  }) {
     final selection = context.watch<ChatSelectionProvider>();
+    final titleStatus = status.isNotEmpty
+        ? status
+        : (widget.isOnline ? 'online' : 'offline');
+
     if (hasSelection) {
       return AppBar(
         backgroundColor: const Color(0xFF00332F),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.read<ChatSelectionProvider>().clearSelection(),
+          onPressed: () =>
+              context.read<ChatSelectionProvider>().clearSelection(),
         ),
         title: Text('${selection.selectedMessages.length} selected'),
         actions: [
@@ -124,10 +134,13 @@ class _ChatScreenState extends State<ChatScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.userName),
                 Text(
-                  widget.isOnline ? 'online' : 'offline',
-                  style: const TextStyle(fontSize: 12),
+                  widget.userName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  titleStatus,
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
                 ),
               ],
             ),
@@ -135,10 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.more_vert),
-          onPressed: _showChatMenu,
-        ),
+        IconButton(icon: const Icon(Icons.more_vert), onPressed: _showChatMenu),
       ],
     );
   }
@@ -235,10 +245,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final messenger = ScaffoldMessenger.of(context);
         final chatProvider = context.read<ChatProvider>();
 
-        await chatProvider.toggleChatTheme(
-              chatId: widget.chatId,
-              theme: theme,
-            );
+        await chatProvider.toggleChatTheme(chatId: widget.chatId, theme: theme);
         if (!mounted) return;
         navigator.pop();
         messenger.showSnackBar(
@@ -247,10 +254,7 @@ class _ChatScreenState extends State<ChatScreen> {
       },
       child: Chip(
         backgroundColor: color,
-        label: Text(
-          theme,
-          style: const TextStyle(color: Colors.white),
-        ),
+        label: Text(theme, style: const TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -297,13 +301,13 @@ class _ChatScreenState extends State<ChatScreen> {
         final chatProvider = context.read<ChatProvider>();
 
         await chatProvider.toggleDisappearingMode(
-              chatId: widget.chatId,
-              mode: mode,
-            );
+          chatId: widget.chatId,
+          mode: mode,
+        );
         await chatProvider.applyDisappearingPolicy(
-              chatId: widget.chatId,
-              mode: mode,
-            );
+          chatId: widget.chatId,
+          mode: mode,
+        );
         if (!mounted) return;
         navigator.pop();
         messenger.showSnackBar(
@@ -337,7 +341,10 @@ class _ChatScreenState extends State<ChatScreen> {
               const SizedBox(height: 14),
               ListTile(
                 leading: const Icon(Icons.image, color: Colors.white),
-                title: const Text('Image', style: TextStyle(color: Colors.white)),
+                title: const Text(
+                  'Image',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   await _pickMedia(ImageSource.gallery, false);
@@ -345,7 +352,10 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.videocam, color: Colors.white),
-                title: const Text('Video', style: TextStyle(color: Colors.white)),
+                title: const Text(
+                  'Video',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   await _pickMedia(ImageSource.gallery, true);
@@ -367,12 +377,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (pickedFile == null) return;
 
     await chatProvider.sendMediaMessage(
-          chatId: widget.chatId,
-          senderId: widget.currentUserId,
-          receiverId: widget.userId,
-          mediaPath: pickedFile.path,
-          isVideo: isVideo,
-        );
+      chatId: widget.chatId,
+      senderId: widget.currentUserId,
+      receiverId: widget.userId,
+      mediaPath: pickedFile.path,
+      isVideo: isVideo,
+    );
 
     if (!mounted) return;
     messenger.showSnackBar(
@@ -397,9 +407,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.pop(context);
                 await context.read<ChatProvider>().reportUser(
-                      chatId: widget.chatId,
-                      reportedUserId: widget.userId,
-                    );
+                  chatId: widget.chatId,
+                  reportedUserId: widget.userId,
+                );
                 if (!mounted) return;
                 messenger.showSnackBar(
                   const SnackBar(content: Text('User reported')),
@@ -431,15 +441,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.pop(context);
                 await context.read<ChatProvider>().blockUser(
-                      chatId: widget.chatId,
-                      blockedUserId: widget.userId,
-                    );
+                  chatId: widget.chatId,
+                  blockedUserId: widget.userId,
+                );
                 if (!mounted) return;
                 navigator.push(
                   MaterialPageRoute(
-                    builder: (_) => BlockedUsersScreen(
-                      currentUserId: widget.currentUserId,
-                    ),
+                    builder: (_) =>
+                        BlockedUsersScreen(currentUserId: widget.currentUserId),
                   ),
                 );
                 messenger.showSnackBar(
@@ -471,9 +480,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.pop(context);
                 await context.read<ChatProvider>().clearChat(
-                      chatId: widget.chatId,
-                      uid: widget.currentUserId,
-                    );
+                  chatId: widget.chatId,
+                  uid: widget.currentUserId,
+                );
                 if (!mounted) return;
                 messenger.showSnackBar(
                   const SnackBar(content: Text('Chat cleared successfully')),
@@ -510,32 +519,192 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showDeleteDialog() {
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete selected messages'),
-          content: const Text('Choose delete option'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+      barrierDismissible: true,
+      barrierLabel: 'Delete messages',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 250),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.86,
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(10, 23, 24, 0.8),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Delete selected messages',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Choose delete option',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 20),
+                      _glassDialogButton(
+                        label: 'Delete for me',
+                        color: Colors.greenAccent,
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await _deleteSelectionForMe();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _glassDialogButton(
+                        label: 'Delete for everyone',
+                        color: Colors.redAccent,
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await _deleteSelectionForEveryone();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _glassDialogButton(
+                        label: 'Cancel',
+                        color: Colors.white54,
+                        onTap: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await _deleteSelectionForMe();
-              },
-              child: const Text('Delete for me'),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _glassDialogButton({
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReactionBar(
+    String messageId,
+    Map<String, List<dynamic>> reactions,
+  ) {
+    final emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'React to message',
+      barrierColor: Colors.black45,
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(8, 33, 34, 0.82),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'React to message',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 14,
+                        children: emojis.map((emoji) {
+                          final hasReacted =
+                              reactions[emoji]?.contains(
+                                widget.currentUserId,
+                              ) ==
+                              true;
+                          return GestureDetector(
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await context.read<ChatProvider>().toggleReaction(
+                                chatId: widget.chatId,
+                                messageId: messageId,
+                                emoji: emoji,
+                                uid: widget.currentUserId,
+                                hasReacted: hasReacted,
+                              );
+                            },
+                            child: Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: hasReacted
+                                    ? Colors.tealAccent.withValues(alpha: 0.3)
+                                    : Colors.white12,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 28),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await _deleteSelectionForEveryone();
-              },
-              child: const Text('Delete for everyone'),
-            ),
-          ],
+          ),
         );
       },
     );
@@ -545,25 +714,25 @@ class _ChatScreenState extends State<ChatScreen> {
     final selection = context.read<ChatSelectionProvider>();
     for (var messageId in selection.selectedMessages) {
       await context.read<ChatProvider>().deleteForMe(
-            chatId: widget.chatId,
-            messageId: messageId,
-            uid: widget.currentUserId,
-          );
+        chatId: widget.chatId,
+        messageId: messageId,
+        uid: widget.currentUserId,
+      );
     }
     selection.clearSelection();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Messages deleted for you')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Messages deleted for you')));
   }
 
   Future<void> _deleteSelectionForEveryone() async {
     final selection = context.read<ChatSelectionProvider>();
     for (var messageId in selection.selectedMessages) {
       await context.read<ChatProvider>().deleteForEveryone(
-            chatId: widget.chatId,
-            messageId: messageId,
-          );
+        chatId: widget.chatId,
+        messageId: messageId,
+      );
     }
     selection.clearSelection();
     if (!mounted) return;
@@ -586,10 +755,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
     for (final doc in docs.docs) {
       await chatProvider.togglePinMessage(
-            chatId: widget.chatId,
-            messageId: doc.id,
-            isPinned: doc['isPinned'] ?? false,
-          );
+        chatId: widget.chatId,
+        messageId: doc.id,
+        isPinned: doc['isPinned'] ?? false,
+      );
     }
     selection.clearSelection();
   }
@@ -608,10 +777,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
     for (final doc in docs.docs) {
       await chatProvider.toggleStarMessage(
-            chatId: widget.chatId,
-            messageId: doc.id,
-            isStarred: doc['isStarred'] ?? false,
-          );
+        chatId: widget.chatId,
+        messageId: doc.id,
+        isStarred: doc['isStarred'] ?? false,
+      );
     }
     selection.clearSelection();
   }
@@ -637,7 +806,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) return;
     messenger.showSnackBar(
       const SnackBar(
-        content: Text('Selected message text copied. Paste into another chat to forward.'),
+        content: Text(
+          'Selected message text copied. Paste into another chat to forward.',
+        ),
       ),
     );
   }
@@ -650,6 +821,11 @@ class _ChatScreenState extends State<ChatScreen> {
         .collection('chats')
         .doc(widget.chatId)
         .snapshots();
+    final typingStream = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.chatId)
+        .collection('typing')
+        .snapshots();
     final messageStream = FirebaseFirestore.instance
         .collection('chats')
         .doc(widget.chatId)
@@ -657,168 +833,221 @@ class _ChatScreenState extends State<ChatScreen> {
         .orderBy('timestamp')
         .snapshots();
 
-    return Scaffold(
-      appBar: _buildAppBar(hasSelection: hasSelection),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: chatStream,
-        builder: (context, chatSnapshot) {
-          if (!chatSnapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return StreamBuilder<DocumentSnapshot>(
+      stream: chatStream,
+      builder: (context, chatSnapshot) {
+        if (!chatSnapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-          final chatData = chatSnapshot.data!.data() as Map<String, dynamic>? ?? {};
-          final disappearingMode = chatData['disappearingMode'] ?? 'off';
-          final blockedBy = List<String>.from(chatData['blockedBy'] ?? []);
-          final isBlockedByCurrent = blockedBy.contains(widget.currentUserId);
-          final isBlockedByOther = blockedBy.contains(widget.userId);
+        final chatData =
+            chatSnapshot.data!.data() as Map<String, dynamic>? ?? {};
+        final disappearingMode = chatData['disappearingMode'] ?? 'off';
+        final blockedBy = List<String>.from(chatData['blockedBy'] ?? []);
+        final isBlockedByCurrent = blockedBy.contains(widget.currentUserId);
+        final isBlockedByOther = blockedBy.contains(widget.userId);
 
-          if (disappearingMode != 'off' && disappearingMode != _lastAppliedDisappearingMode) {
-            _lastAppliedDisappearingMode = disappearingMode;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.read<ChatProvider>().applyDisappearingPolicy(
-                    chatId: widget.chatId,
-                    mode: disappearingMode,
-                  );
-            });
-          }
+        if (disappearingMode != 'off' &&
+            disappearingMode != _lastAppliedDisappearingMode) {
+          _lastAppliedDisappearingMode = disappearingMode;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<ChatProvider>().applyDisappearingPolicy(
+              chatId: widget.chatId,
+              mode: disappearingMode,
+            );
+          });
+        }
 
-          return Column(
-            children: [
-              if (_isSearchMode) _buildSearchBar(),
-              if (isBlockedByCurrent)
-                Container(
-                  width: double.infinity,
-                  color: Colors.red.shade800,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                  child: const Text(
-                    'You have blocked this user. Messages are hidden.',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              if (isBlockedByOther)
-                Container(
-                  width: double.infinity,
-                  color: Colors.orange.shade800,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                  child: const Text(
-                    'You are blocked by this user. Chat sending may be restricted.',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: messageStream,
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+        return StreamBuilder<QuerySnapshot>(
+          stream: typingStream,
+          builder: (context, typingSnapshot) {
+            final isTyping =
+                typingSnapshot.hasData &&
+                typingSnapshot.data!.docs.any(
+                  (doc) => doc.id != widget.currentUserId,
+                );
+            final statusText = isTyping
+                ? 'typing...'
+                : (widget.isOnline ? 'online' : 'offline');
 
-                    var docs = snapshot.data!.docs.where((doc) {
-                      final deletedFor = List.from(doc['deletedFor'] ?? []);
-                      return !deletedFor.contains(widget.currentUserId);
-                    }).toList();
+            return Scaffold(
+              appBar: _buildAppBar(
+                hasSelection: hasSelection,
+                status: statusText,
+              ),
+              body: Column(
+                children: [
+                  if (_isSearchMode) _buildSearchBar(),
+                  if (isBlockedByCurrent)
+                    Container(
+                      width: double.infinity,
+                      color: Colors.red.shade800,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 16,
+                      ),
+                      child: const Text(
+                        'You have blocked this user. Messages are hidden.',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  if (isBlockedByOther)
+                    Container(
+                      width: double.infinity,
+                      color: Colors.orange.shade800,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 16,
+                      ),
+                      child: const Text(
+                        'You are blocked by this user. Chat sending may be restricted.',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  Expanded(
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: messageStream,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-                    if (_searchQuery.isNotEmpty) {
-                      docs = docs.where((doc) {
-                        final text = doc['text']?.toString().toLowerCase() ?? '';
-                        return text.contains(_searchQuery.toLowerCase());
-                      }).toList();
-                    }
+                        var docs = snapshot.data!.docs.where((doc) {
+                          final deletedFor = List.from(doc['deletedFor'] ?? []);
+                          return !deletedFor.contains(widget.currentUserId);
+                        }).toList();
 
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _scrollToBottom();
-                    });
+                        if (_searchQuery.isNotEmpty) {
+                          docs = docs.where((doc) {
+                            final text =
+                                doc['text']?.toString().toLowerCase() ?? '';
+                            return text.contains(_searchQuery.toLowerCase());
+                          }).toList();
+                        }
 
-                    if (docs.isEmpty) {
-                      return const Center(
-                        child: Text('No messages yet.'),
-                      );
-                    }
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollToBottom();
+                        });
 
-                    return ListView.builder(
-                      controller: _scrollController,
-                      itemCount: docs.length,
-                      itemBuilder: (_, i) {
-                        final data = docs[i];
-                        final isMe = data['senderId'] == widget.currentUserId;
+                        if (docs.isEmpty) {
+                          return const Center(child: Text('No messages yet.'));
+                        }
 
-                        return MessageBubble(
-                          text: data['text'] ?? '',
-                          isMe: isMe,
-                          time: _format(data['timestamp']),
-                          chatId: widget.chatId,
-                          messageId: data.id,
-                          currentUserId: widget.currentUserId,
-                          reactions:
-                              Map<String, List<dynamic>>.from(data['reactions'] ?? {}),
-                          isEdited: data['isEdited'] ?? false,
-                          isPinned: data['isPinned'] ?? false,
-                          isStarred: data['isStarred'] ?? false,
-                          replyText: data['replyText'],
-                          bubbleStyle: chatData['bubbleStyle'] ?? 'gradient',
-                          highlightQuery: _searchQuery,
-                          image: data['image'],
-                          onSwipeReply: () {
-                            setState(() {
-                              _replyText = data['text'];
-                              _replyId = data.id;
-                            });
-                          },
-                          onLongPressAction: () {},
-                          onReact: (emoji) async {
-                            await context.read<ChatProvider>().toggleReaction(
-                                  chatId: widget.chatId,
-                                  messageId: data.id,
-                                  emoji: emoji,
-                                  uid: widget.currentUserId,
-                                  hasReacted: false,
+                        return ListView.builder(
+                          controller: _scrollController,
+                          itemCount: docs.length,
+                          itemBuilder: (_, i) {
+                            final data = docs[i];
+                            final isMe =
+                                data['senderId'] == widget.currentUserId;
+                            final currentReactions =
+                                Map<String, List<dynamic>>.from(
+                                  data['reactions'] ?? {},
                                 );
-                          },
-                          onDoubleTap: () async {
-                            await context.read<ChatProvider>().toggleReaction(
-                                  chatId: widget.chatId,
-                                  messageId: data.id,
-                                  emoji: '❤️',
-                                  uid: widget.currentUserId,
-                                  hasReacted: false,
-                                );
+                            final hasLoved =
+                                currentReactions['❤️']?.contains(
+                                  widget.currentUserId,
+                                ) ==
+                                true;
+
+                            return MessageBubble(
+                              text: data['text'] ?? '',
+                              isMe: isMe,
+                              time: _format(data['timestamp']),
+                              chatId: widget.chatId,
+                              messageId: data.id,
+                              currentUserId: widget.currentUserId,
+                              reactions: currentReactions,
+                              isEdited: data['isEdited'] ?? false,
+                              isPinned: data['isPinned'] ?? false,
+                              isStarred: data['isStarred'] ?? false,
+                              replyText: data['replyText'],
+                              bubbleStyle:
+                                  chatData['bubbleStyle'] ?? 'gradient',
+                              highlightQuery: _searchQuery,
+                              image: data['image'],
+                              onSwipeReply: () {
+                                setState(() {
+                                  _replyText = data['text'];
+                                  _replyId = data.id;
+                                });
+                              },
+                              onLongPressAction: () =>
+                                  _showReactionBar(data.id, currentReactions),
+                              onReact: (emoji) async {
+                                await context
+                                    .read<ChatProvider>()
+                                    .toggleReaction(
+                                      chatId: widget.chatId,
+                                      messageId: data.id,
+                                      emoji: emoji,
+                                      uid: widget.currentUserId,
+                                      hasReacted:
+                                          currentReactions[emoji]?.contains(
+                                            widget.currentUserId,
+                                          ) ==
+                                          true,
+                                    );
+                              },
+                              onDoubleTap: () async {
+                                await context
+                                    .read<ChatProvider>()
+                                    .toggleReaction(
+                                      chatId: widget.chatId,
+                                      messageId: data.id,
+                                      emoji: '❤️',
+                                      uid: widget.currentUserId,
+                                      hasReacted: hasLoved,
+                                    );
+                              },
+                            );
                           },
                         );
                       },
-                    );
-                  },
-                ),
-              ),
-              if (_replyText != null)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  color: Colors.grey.shade200,
-                  child: Row(
-                    children: [
-                      Expanded(child: Text('Replying: $_replyText')),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          setState(() {
-                            _replyText = null;
-                            _replyId = null;
-                          });
-                        },
-                      )
-                    ],
+                    ),
                   ),
-                ),
-              InputBar(
-                onSend: (text) async {
-                  if (text.trim().isEmpty) return;
-                  if (isBlockedByOther) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Cannot send message while blocked.')),
-                    );
-                    return;
-                  }
+                  if (_replyText != null)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      color: Colors.grey.shade200,
+                      child: Row(
+                        children: [
+                          Expanded(child: Text('Replying: $_replyText')),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              setState(() {
+                                _replyText = null;
+                                _replyId = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  InputBar(
+                    onSend: (text) async {
+                      if (text.trim().isEmpty) return;
+                      if (isBlockedByOther) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Cannot send message while blocked.'),
+                          ),
+                        );
+                        return;
+                      }
 
-                  await context.read<ChatProvider>().sendMessage(
+                      await context.read<ChatProvider>().setTyping(
+                        chatId: widget.chatId,
+                        uid: widget.currentUserId,
+                        isTyping: false,
+                      );
+if (!context.mounted) return;
+                      await context.read<ChatProvider>().sendMessage(
                         chatId: widget.chatId,
                         text: text,
                         senderId: widget.currentUserId,
@@ -827,17 +1056,27 @@ class _ChatScreenState extends State<ChatScreen> {
                         replyText: _replyText,
                       );
 
-                  if (!mounted) return;
-                  setState(() {
-                    _replyText = null;
-                    _replyId = null;
-                  });
-                },
+                      if (!context.mounted) return;
+                      setState(() {
+                        _replyText = null;
+                        _replyId = null;
+                      });
+                    },
+                    onTyping: (typing) async {
+                      await context.read<ChatProvider>().setTyping(
+                        chatId: widget.chatId,
+                        uid: widget.currentUserId,
+                        isTyping: typing,
+                      );
+                    },
+                    onAttachmentTap: _showGalleryPicker,
+                  ),
+                ],
               ),
-            ],
-          );
-        },
-      ),
+            );
+          },
+        );
+      },
     );
   }
 

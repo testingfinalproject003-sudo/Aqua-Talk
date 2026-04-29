@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:aqua_talk/screens/chat/chat_screen.dart';
+import 'package:aqua_talk/screens/chats/chat_screen.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
 
 class ContactScreen extends StatefulWidget {
@@ -43,7 +43,12 @@ class _ContactScreenState extends State<ContactScreen> {
   }
 
   /// ================== OPEN CHAT ==================
-  Future<void> openChat(String otherUid) async {
+  Future<void> openChat(
+    String otherUid, {
+    required String otherName,
+    required String otherImage,
+    required bool isOnline,
+  }) async {
     final navigator = Navigator.of(context);
 
     final chatId = await getOrCreateChat(otherUid);
@@ -55,6 +60,10 @@ class _ContactScreenState extends State<ContactScreen> {
         builder: (_) => ChatScreen(
           chatId: chatId,
           currentUserId: currentUid,
+          userId: otherUid,
+          userName: otherName,
+          userImage: otherImage,
+          isOnline: isOnline,
         ),
       ),
     );
@@ -128,21 +137,26 @@ class _ContactScreenState extends State<ContactScreen> {
                         users[index].data() as Map<String, dynamic>;
                     final otherUid = users[index].id;
 
+                    final otherName = (user['name'] ?? "User").toString();
+                    final otherImage = (user['profilePic'] ?? "").toString();
+                    final otherOnline = (user['isOnline'] ?? false) as bool;
+
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundImage:
-                            (user['profilePic'] ?? "") != ""
-                                ? NetworkImage(user['profilePic'])
-                                : null,
-                        child: (user['profilePic'] ?? "") == ""
-                            ? const Icon(Icons.person)
-                            : null,
+                            otherImage.isNotEmpty ? NetworkImage(otherImage) : null,
+                        child: otherImage.isEmpty ? const Icon(Icons.person) : null,
                       ),
-                      title: Text(user['name'] ?? "User"),
+                      title: Text(otherName),
                       subtitle: Text(user['about'] ?? ""),
                       trailing: const Icon(Icons.chat),
 
-                      onTap: () => openChat(otherUid),
+                      onTap: () => openChat(
+                        otherUid,
+                        otherName: otherName,
+                        otherImage: otherImage,
+                        isOnline: otherOnline,
+                      ),
                     );
                   },
                 );

@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../provider/chat_provider.dart';
 import '../../models/chat_model.dart';
-import '../screens/chat/chat_screen.dart';
+import '../screens/chats/chat_screen.dart';
 
 class ChatTile extends StatelessWidget {
   final ChatModel chat;
@@ -51,6 +51,10 @@ class ChatTile extends StatelessWidget {
               builder: (_) => ChatScreen(
                 chatId: chat.id,
                 currentUserId: uid,
+                userId: chat.userId,
+                userName: chat.name,
+                userImage: chat.avatar,
+                isOnline: chat.isOnline,
               ),
             ),
           );

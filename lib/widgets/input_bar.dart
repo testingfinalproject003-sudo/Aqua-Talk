@@ -7,12 +7,14 @@ class InputBar extends StatefulWidget {
   final String? initialDraft;
   final ValueChanged<String>? onDraftChanged;
   final ValueChanged<bool>? onTyping;
+  final VoidCallback? onAttachmentTap;
 
   const InputBar({
     required this.onSend,
     this.initialDraft,
     this.onDraftChanged,
     this.onTyping,
+    this.onAttachmentTap,
     super.key,
   });
 
@@ -262,7 +264,9 @@ class _InputBarState extends State<InputBar> {
                 if (!isRecording)
                   IconButton(
                     icon: const Icon(Icons.attach_file, color: Colors.white70),
-                    onPressed: () => _showAttachmentMenu(context),
+                    onPressed:
+                        widget.onAttachmentTap ??
+                        () => _showAttachmentMenu(context),
                   ),
                 if (!isRecording)
                   GestureDetector(
@@ -291,8 +295,8 @@ class _InputBarState extends State<InputBar> {
                         playbackSpeed == 1.0
                             ? '1x'
                             : playbackSpeed == 1.5
-                                ? '1.5x'
-                                : '2x',
+                            ? '1.5x'
+                            : '2x',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
