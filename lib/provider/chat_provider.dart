@@ -225,29 +225,60 @@ class ChatProvider with ChangeNotifier {
     );
   }
 
-  Future<void> toggleReaction({
-    required String chatId,
-    required String messageId,
-    required String emoji,
-    required String uid,
-    required bool hasReacted,
-  }) async {
-    if (hasReacted) {
-      await _chatService.removeReaction(
-        chatId: chatId,
-        messageId: messageId,
-        emoji: emoji,
-        uid: uid,
-      );
-    } else {
-      await _chatService.addReaction(
-        chatId: chatId,
-        messageId: messageId,
-        emoji: emoji,
-        uid: uid,
-      );
+Future<void> toggleReaction({
+  required String chatId,
+  required String messageId,
+  required String emoji,
+  required String uid,
+}) async {
+  final messageRef = _firestore
+      .collection('chats')
+      .doc(chatId)
+      .collection('messages')
+      .doc(messageId);
+
+  final snapshot = await messageRef.get();
+  final data = snapshot.data() as Map<String, dynamic>;
+
+  Map<String, dynamic> reactions =
+      Map<String, dynamic>.from(data['reactions'] ?? {});
+
+  String? previousEmoji;
+
+  // 🔍 find existing reaction
+  reactions.forEach((key, value) {
+    List users = List.from(value);
+    if (users.contains(uid)) {
+      previousEmoji = key;
     }
+  });
+
+  // ❌ remove user from ALL emojis
+  final updated = <String, dynamic>{};
+
+  reactions.forEach((key, value) {
+    List users = List.from(value);
+    users.remove(uid);
+
+    if (users.isNotEmpty) {
+      updated[key] = users;
+    }
+  });
+
+  // 🔁 same emoji → only remove (toggle off)
+  if (previousEmoji == emoji) {
+    await messageRef.update({'reactions': updated});
+    return;
   }
+
+  // ✅ add new emoji
+  List users = List.from(updated[emoji] ?? []);
+  users.add(uid);
+  updated[emoji] = users;
+
+  await messageRef.update({'reactions': updated});
+}
+ 
 
   Future<void> setTyping({
     required String chatId,

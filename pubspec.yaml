@@ -52,6 +52,7 @@ dependencies:
   cloud_firestore: ^6.3.0
   flutter_keyboard_visibility: ^6.0.0
   rxdart: ^0.28.0
+  record: ^6.2.0
 
   
 

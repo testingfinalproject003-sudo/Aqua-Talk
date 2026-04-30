@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart'; // ✅ terminal: flutter pub add emoji_picker_flutter
-
+import 'package:record/record.dart';
 class InputBar extends StatefulWidget {
   final Function(String) onSend;
   final String? initialDraft;
@@ -32,7 +32,8 @@ class _InputBarState extends State<InputBar> {
   double dragX = 0.0;
   double dragY = 0.0;
   double playbackSpeed = 1.0;
-
+  final _audioRecorder = AudioRecorder();
+String? _audioPath;
   @override
   void initState() {
     super.initState();
@@ -65,32 +66,38 @@ class _InputBarState extends State<InputBar> {
 
   @override
   void dispose() {
+    _audioRecorder.dispose();
     controller.dispose();
     focusNode.dispose();
     super.dispose();
   }
 
   // --- Voice Clip Logic ---
-  void _startRecording() {
-    setState(() => isRecording = true);
-    debugPrint("Recording Started...");
-  }
+  Future<void> _startRecording() async {
+  if (await _audioRecorder.hasPermission()) {
+    _audioPath = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-  void _stopRecording({bool cancel = false}) {
-    setState(() {
-      isRecording = false;
-      isLockedRecording = false;
-    });
-    if (cancel) {
-      debugPrint("Recording canceled.");
-      return;
-    }
-    debugPrint("Recording Stopped & Sent.");
-    final voicePlaceholder =
-        '[Voice message • ${playbackSpeed == 1.0 ? '1x' : '${playbackSpeed}x'}]';
-    widget.onSend(voicePlaceholder);
-    controller.clear();
+    await _audioRecorder.start(
+      const RecordConfig(),
+      path: _audioPath!,
+    );
+
+    setState(() => isRecording = true);
   }
+}
+
+Future<void> _stopRecording({bool cancel = false}) async {
+  final path = await _audioRecorder.stop();
+
+  setState(() {
+    isRecording = false;
+    isLockedRecording = false;
+  });
+
+  if (cancel || path == null) return;
+
+  widget.onSend(path);
+}
 
   // --- Glassy Attachment Menu ---
   void _showAttachmentMenu(BuildContext context) {

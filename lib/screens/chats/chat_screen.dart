@@ -711,7 +711,6 @@ onUnblock: () async {
                                 messageId: messageId,
                                 emoji: emoji,
                                 uid: widget.currentUserId,
-                                hasReacted: hasReacted,
                               );
                             },
                             child: Container(
@@ -984,11 +983,6 @@ onUnblock: () async {
                                 Map<String, List<dynamic>>.from(
                                   data['reactions'] ?? {},
                                 );
-                            final hasLoved =
-                                currentReactions['❤️']?.contains(
-                                  widget.currentUserId,
-                                ) ==
-                                true;
 
                             return MessageBubble(
                               text: data['text'] ?? '',
@@ -1022,11 +1016,6 @@ onUnblock: () async {
                                       messageId: data.id,
                                       emoji: emoji,
                                       uid: widget.currentUserId,
-                                      hasReacted:
-                                          currentReactions[emoji]?.contains(
-                                            widget.currentUserId,
-                                          ) ==
-                                          true,
                                     );
                               },
                               onDoubleTap: () async {
@@ -1037,7 +1026,6 @@ onUnblock: () async {
                                       messageId: data.id,
                                       emoji: '❤️',
                                       uid: widget.currentUserId,
-                                      hasReacted: hasLoved,
                                     );
                               },
                             );
