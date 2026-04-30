@@ -42,11 +42,17 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
+bool isBlockedByCurrent = false;
+bool isBlockedByOther = false;
+
   String? _replyText;
   String? _replyId;
   String _searchQuery = '';
   bool _isSearchMode = false;
   String _lastAppliedDisappearingMode = 'off';
+
+  Stream<DocumentSnapshot> get userStream =>
+    FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots();
 
   @override
   void dispose() {
@@ -134,10 +140,25 @@ class _ChatScreenState extends State<ChatScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.userName,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                StreamBuilder<DocumentSnapshot>(
+  stream: FirebaseFirestore.instance
+      .collection('users')
+      .doc(widget.userId)
+      .snapshots(),
+  builder: (context, snapshot) {
+    String name = widget.userName;
+
+    if (snapshot.hasData && snapshot.data!.data() != null) {
+      final data = snapshot.data!.data() as Map<String, dynamic>;
+      name = data['name'] ?? widget.userName;
+    }
+
+    return Text(
+      name,
+      style: const TextStyle(fontWeight: FontWeight.w600),
+    );
+  },
+),
                 Text(
                   titleStatus,
                   style: const TextStyle(fontSize: 12, color: Colors.white70),
@@ -159,6 +180,19 @@ class _ChatScreenState extends State<ChatScreen> {
       chatId: widget.chatId,
       userId: widget.userId,
       currentUserId: widget.currentUserId,
+
+    isBlocked: isBlockedByCurrent,
+
+onUnblock: () async {
+  await context.read<ChatProvider>().unblockUser(
+    chatId: widget.chatId,
+    blockedUserId:  widget.userId,
+  );
+
+  if (!mounted) return;
+  setState(() {});
+  isBlockedByCurrent = false; // UI refresh
+},
       onViewContact: () {
         Navigator.push(
           context,
@@ -845,9 +879,11 @@ class _ChatScreenState extends State<ChatScreen> {
         final chatData =
             chatSnapshot.data!.data() as Map<String, dynamic>? ?? {};
         final disappearingMode = chatData['disappearingMode'] ?? 'off';
-        final blockedBy = List<String>.from(chatData['blockedBy'] ?? []);
-        final isBlockedByCurrent = blockedBy.contains(widget.currentUserId);
-        final isBlockedByOther = blockedBy.contains(widget.userId);
+       final blockedBy = List<String>.from(chatData['blockedBy'] ?? []);
+
+
+      isBlockedByCurrent = blockedBy.contains(widget.currentUserId);
+      isBlockedByOther = blockedBy.contains(widget.userId);
 
         if (disappearingMode != 'off' &&
             disappearingMode != _lastAppliedDisappearingMode) {

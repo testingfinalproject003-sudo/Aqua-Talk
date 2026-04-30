@@ -7,6 +7,7 @@ class ChatMenuOverlay {
     required String chatId,
     required String userId,
     required String currentUserId,
+    required bool isBlocked, // 🔥 ADD THIS
     required VoidCallback onViewContact,
     required VoidCallback onSearch,
     required VoidCallback onMedia,
@@ -15,7 +16,9 @@ class ChatMenuOverlay {
     required VoidCallback onGallery,
     required VoidCallback onReport,
     required VoidCallback onBlock,
+    required VoidCallback onUnblock,
     required VoidCallback onClearChat,
+    
   }) {
     showDialog(
       context: context,
@@ -39,6 +42,7 @@ class ChatMenuOverlay {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+
                       _item(context, Icons.person, "View Contact", onViewContact),
                       _item(context, Icons.search, "Search Chat", onSearch),
                       _item(context, Icons.perm_media, "Media / Links", onMedia),
@@ -48,9 +52,30 @@ class ChatMenuOverlay {
 
                       const Divider(color: Colors.white30),
 
-                      _item(context, Icons.report, "Report User", onReport, color: Colors.red),
-                      _item(context, Icons.block, "Block User", onBlock, color: Colors.red),
-                      _item(context, Icons.delete, "Clear Chat", onClearChat, color: Colors.red),
+                      _item(
+                        context,
+                        Icons.report,
+                        "Report User",
+                        onReport,
+                        color: Colors.red,
+                      ),
+
+                      // 🔥 BLOCK / UNBLOCK FIXED
+                      _item(
+                        context,
+                        Icons.block,
+                        isBlocked ? "Unblock User" : "Block User",
+                        isBlocked ? onUnblock : onBlock,
+                        color: Colors.red,
+                      ),
+
+                      _item(
+                        context,
+                        Icons.delete,
+                        "Clear Chat",
+                        onClearChat,
+                        color: Colors.red,
+                      ),
                     ],
                   ),
                 ),

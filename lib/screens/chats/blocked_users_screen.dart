@@ -9,6 +9,83 @@ class BlockedUsersScreen extends StatelessWidget {
     required this.currentUserId,
   });
 
+  // ================= UNBLOCK FUNCTION =================
+
+Future<void> _unblockUser(String blockedUserId) async {
+
+  // ================= 1. REMOVE FROM USER LIST =================
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(currentUserId)
+      .update({
+    'blockedUsers': FieldValue.arrayRemove([blockedUserId])
+  });
+
+  // ================= 2. FIND CHAT ID =================
+  // SAME logic jo tum chat create karte waqt use karte ho
+  final chatId = currentUserId.hashCode <= blockedUserId.hashCode
+      ? "${currentUserId}_$blockedUserId"
+      : "${blockedUserId}_$currentUserId";
+
+  // ================= 3. REMOVE FROM CHAT BLOCK =================
+  await FirebaseFirestore.instance
+      .collection('chats')
+      .doc(chatId)
+      .update({
+    'blockedBy': FieldValue.arrayRemove([currentUserId])
+  });
+}
+  // ================= GLASS DIALOG =================
+  void _showUnblockDialog(BuildContext context, String userId) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (_) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 260,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white30),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Unblock User?",
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                  const SizedBox(height: 15),
+
+                  ListTile(
+                    leading: const Icon(Icons.lock_open, color: Colors.green),
+                    title: const Text("Unblock",
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _unblockUser(userId);
+                    },
+                  ),
+
+                  ListTile(
+                    leading: const Icon(Icons.close, color: Colors.red),
+                    title: const Text("Cancel",
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,6 +93,7 @@ class BlockedUsersScreen extends StatelessWidget {
         title: const Text('Block List'),
         backgroundColor: const Color(0xFF004D40),
       ),
+
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -50,34 +128,54 @@ class BlockedUsersScreen extends StatelessWidget {
               }
 
               final users = usersSnapshot.data!.docs;
-              if (users.isEmpty) {
-                return const Center(
-                  child: Text('No blocked profiles available.'),
-                );
-              }
 
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: users.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final blockedUser = users[index].data() as Map<String, dynamic>;
+                  final userDoc = users[index];
+                  final blockedUser =
+                      userDoc.data() as Map<String, dynamic>;
+
                   final userName = blockedUser['name'] ?? 'Unknown';
                   final userImage = blockedUser['profilePic'] ?? '';
+                  final blockedUserId = userDoc.id;
 
-                  return ListTile(
-                    tileColor: const Color.fromRGBO(0, 77, 64, 0.08),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  return GestureDetector(
+                    // ================= LONG PRESS =================
+                    onLongPress: () {
+                      _showUnblockDialog(context, blockedUserId);
+                    },
+
+                    child: ListTile(
+                      tileColor: const Color.fromRGBO(0, 77, 64, 0.08),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+
+                      leading: CircleAvatar(
+                        backgroundImage: userImage.isNotEmpty
+                            ? NetworkImage(userImage)
+                            : null,
+                        child: userImage.isEmpty
+                            ? const Icon(Icons.person)
+                            : null,
+                      ),
+
+                      title: Text(userName),
+                      subtitle: const Text('Blocked user'),
+
+                      // ================= UNBLOCK BUTTON =================
+                      trailing: TextButton(
+                        onPressed: () =>
+                            _showUnblockDialog(context, blockedUserId),
+                        child: const Text(
+                          "Unblock",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
                     ),
-                    leading: CircleAvatar(
-                      backgroundImage: userImage.isNotEmpty
-                          ? NetworkImage(userImage)
-                          : null,
-                      child: userImage.isEmpty ? const Icon(Icons.person) : null,
-                    ),
-                    title: Text(userName),
-                    subtitle: const Text('Blocked user'),
                   );
                 },
               );

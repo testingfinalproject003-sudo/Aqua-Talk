@@ -16,7 +16,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     await FirebaseFirestore.instance
-        .collection("myApp")
+        .collection("users")
         .doc(uid)
         .update({
       "hideLastSeen": hideLastSeen,

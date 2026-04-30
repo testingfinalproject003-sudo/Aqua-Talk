@@ -13,26 +13,7 @@ class ChatProvider with ChangeNotifier {
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
-  // ================== DUMMY DATA ==================
-  final List<ChatModel> dummyChats = [
-    ChatModel(
-      id: '1',
-      userId: 'u1',
-      name: 'Ali',
-      message: 'Hello bro 👋',
-      time: DateTime.now().subtract(const Duration(minutes: 2)),
-      unread: 3,
-      avatar: '',
-      isOnline: true,
-      isPinned: false,
-      unreadCount: 3,
-      isFavorite: false,
-      isGroup: false,
-      toggleFavorite: () {},
-      markAsRead: () {},
-      
-    ),
-  ];
+  
 
   // ================== MARK AS READ ==================
   Future<void> markAsRead(String chatId) async {
@@ -92,7 +73,7 @@ class ChatProvider with ChangeNotifier {
   // ================== GET CHATS ==================
   Stream<List<ChatModel>> getChats() {
     if (_uid == null) {
-      return Stream.value(dummyChats);
+      return Stream.value([]);
     }
 
     return _firestore
@@ -105,7 +86,7 @@ class ChatProvider with ChangeNotifier {
               .where((chat) => !chat.isArchived)
               .toList();
 
-          if (chats.isEmpty) return dummyChats;
+          if (chats.isEmpty) return [];
 
           // ✅ PINNED + LATEST
           chats.sort((a, b) {

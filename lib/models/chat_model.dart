@@ -26,6 +26,7 @@ class ChatModel {
   final String disappearingMode;
   final VoidCallback toggleFavorite;
   final VoidCallback markAsRead;
+  final List<String> participants;
 
   ChatModel({
     required this.id,
@@ -49,6 +50,7 @@ class ChatModel {
     this.disappearingMode = 'off',
     required this.toggleFavorite,
     required this.markAsRead,
+    this.participants = const [],
   });
 
   factory ChatModel.fromMap(Map<String, dynamic> map, String id) {
@@ -74,6 +76,7 @@ class ChatModel {
       disappearingMode: map['disappearingMode'] ?? 'off',
       toggleFavorite: () {},
       markAsRead: () {},
+      participants: map['participants'] is List ? List<String>.from(map['participants']) : const [],
     );
   }
 

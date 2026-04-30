@@ -16,7 +16,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> saveData() async {
     await FirebaseFirestore.instance
-        .collection("myApp")
+        .collection("users")
         .doc(user.uid)
         .update({
       "name": nameController.text,
@@ -36,7 +36,7 @@ if (!mounted) return;
       appBar: AppBar(title: const Text("Account")),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
-            .collection("myApp")
+            .collection("users")
             .doc(user.uid)
             .get(),
         builder: (context, snapshot) {

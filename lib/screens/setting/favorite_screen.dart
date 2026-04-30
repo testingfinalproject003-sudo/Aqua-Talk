@@ -10,7 +10,7 @@ class FavoriteScreen extends StatelessWidget {
       appBar: AppBar(title: const Text("Favorite Contacts")),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
-            .collection("myApp")
+            .collection("users")
             .where("isFavorite", isEqualTo: true)
             .snapshots(),
         builder: (context, snapshot) {

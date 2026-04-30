@@ -6,7 +6,7 @@ class UserService {
 
   /// ================== CREATE / UPDATE USER ==================
   Future<void> createOrUpdateUser(User user) async {
-    final docRef = _firestore.collection("myApp").doc(user.uid);
+    final docRef = _firestore.collection("users").doc(user.uid);
     final doc = await docRef.get();
 
     final userData = {
@@ -32,7 +32,7 @@ class UserService {
 
   /// ================== SET OFFLINE ==================
   Future<void> setOffline(String uid) async {
-    await _firestore.collection("myApp").doc(uid).update({
+    await _firestore.collection("users").doc(uid).update({
       "isOnline": false,
       "lastSeen": FieldValue.serverTimestamp(),
     });
@@ -53,17 +53,17 @@ class UserService {
 
     if (data.isNotEmpty) {
       data['updatedAt'] = FieldValue.serverTimestamp();
-      await _firestore.collection("myApp").doc(uid).update(data);
+      await _firestore.collection("users").doc(uid).update(data);
     }
   }
 
   /// ================== GET USER STREAM ==================
   Stream<DocumentSnapshot<Map<String, dynamic>>> getUser(String uid) {
-    return _firestore.collection("myApp").doc(uid).snapshots();
+    return _firestore.collection("users").doc(uid).snapshots();
   }
 
   /// ================== GET USER ONCE ==================
   Future<DocumentSnapshot<Map<String, dynamic>>> getUserOnce(String uid) {
-    return _firestore.collection("myApp").doc(uid).get();
+    return _firestore.collection("users").doc(uid).get();
   }
 }
