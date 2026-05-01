@@ -11,10 +11,8 @@ class ChatMenuOverlay {
     required VoidCallback onViewContact,
     required VoidCallback onSearch,
     required VoidCallback onMedia,
-    required VoidCallback onTheme,
     required VoidCallback onDisappearing,
     required VoidCallback onGallery,
-    required VoidCallback onReport,
     required VoidCallback onBlock,
     required VoidCallback onUnblock,
     required VoidCallback onClearChat,
@@ -46,20 +44,10 @@ class ChatMenuOverlay {
                       _item(context, Icons.person, "View Contact", onViewContact),
                       _item(context, Icons.search, "Search Chat", onSearch),
                       _item(context, Icons.perm_media, "Media / Links", onMedia),
-                      _item(context, Icons.palette, "Chat Theme", onTheme),
                       _item(context, Icons.timer, "Disappearing Msg", onDisappearing),
                       _item(context, Icons.image, "Gallery", onGallery),
 
                       const Divider(color: Colors.white30),
-
-                      _item(
-                        context,
-                        Icons.report,
-                        "Report User",
-                        onReport,
-                        color: Colors.red,
-                      ),
-
                       // 🔥 BLOCK / UNBLOCK FIXED
                       _item(
                         context,

@@ -100,8 +100,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: bgColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFF004D40),
-        title: const Text('Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        title:  Text('Profile', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -245,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         alignment: Alignment.centerLeft,
         child: Text(
           title.toUpperCase(),
-          style: const TextStyle(color: Color(0xFF80CBC4), fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.5),
+          style:  TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.5),
         ),
       ),
     );
@@ -255,8 +255,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: Icon(icon, color: const Color(0xFF80CBC4)),
-      title: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      subtitle: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: theme.isDark ? Colors.white : Colors.black87)),
+      title: Text(title, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12)),
+      subtitle: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color:  Theme.of(context).textTheme.bodySmall?.color,)),
       trailing: IconButton(icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF80CBC4)), onPressed: onEdit),
     );
   }
@@ -265,12 +265,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListTile(
       onTap: onTap,
       leading: Icon(icon, color: const Color(0xFF80CBC4)),
-      title: Text(title, style: const TextStyle(color: Color(0xFF80CBC4), fontWeight: FontWeight.w600, fontSize: 14)),
+      title: Text(title, style: TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.w600, fontSize: 14)),
       trailing: Wrap(
         spacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text(trailing, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(trailing, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12)),
           const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
         ],
       ),

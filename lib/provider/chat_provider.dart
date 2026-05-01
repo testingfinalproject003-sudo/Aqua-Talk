@@ -523,21 +523,7 @@ Future<void> toggleReaction({
     }
   }
 
-  Future<void> reportUser({
-    required String chatId,
-    required String reportedUserId,
-  }) async {
-    final reporterId = _uid;
-    if (reporterId == null) return;
-
-    await _firestore.collection('reports').add({
-      'chatId': chatId,
-      'reportedUserId': reportedUserId,
-      'reporterId': reporterId,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-  }
-
+ 
   Future<void> blockUser({
     required String chatId,
     required String blockedUserId,

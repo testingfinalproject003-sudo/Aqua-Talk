@@ -167,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         centerTitle: true,
         title: const Text("Enter your phone number", style: TextStyle(color: Color(0xFF004D40))),
-        backgroundColor: const Color(0xFFB2DFDB),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
       ),
       body: Container(

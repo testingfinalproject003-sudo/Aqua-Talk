@@ -142,7 +142,7 @@ class _ChatTabState extends State<ChatTab> {
                         child: Text(
                           filter,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
+                            color:  Theme.of(context).textTheme.bodySmall?.color,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

@@ -185,8 +185,8 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
         const SizedBox(height: 10),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color:  Theme.of(context).textTheme.bodySmall?.color,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -211,14 +211,14 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
 
       // ---------------- APP BAR ----------------
       appBar:  AppBar(
-              backgroundColor: const Color(0xFF004D40),
+             backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
               elevation: 0,
-              title: const Text(
+              title: Text(
                 "AquaTalk",
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 26,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
               actions: [

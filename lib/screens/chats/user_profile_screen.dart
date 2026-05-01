@@ -26,7 +26,7 @@ class UserProfileScreen extends StatelessWidget {
 
       appBar: AppBar(
         title: const Text("Profile"),
-        backgroundColor: darkTeal,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
 
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(

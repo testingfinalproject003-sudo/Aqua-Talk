@@ -73,8 +73,9 @@ class _ContactScreenState extends State<ContactScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Contacts',style: TextStyle(color: Colors.white),),
-      backgroundColor: const Color(0xFF004D40),
+      appBar: AppBar(title:  Text('Contacts',style:
+       TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),),
+       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
 
       body: Container(

@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:aqua_talk/provider/settings_provider.dart';
 import 'package:aqua_talk/provider/theme_provider.dart';
 import 'package:aqua_talk/services/user_service.dart';
 
@@ -64,7 +63,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
       // ================= APPBAR =================
       appBar: AppBar(
-        backgroundColor: isDark ? Colors.black : const Color(0xFFB2DFDB),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
 
         title: _isSearching
@@ -147,7 +146,6 @@ class _SettingsTabState extends State<SettingsTab> {
 ),
             _buildThemeSwitch(context),
             _buildDivider(context),
-            _buildFontSizeTile(context),
             _buildDivider(context),
             _buildSettingsTile(
               Icons.favorite_rounded,
@@ -184,7 +182,7 @@ class _SettingsTabState extends State<SettingsTab> {
     return TextField(
       controller: _searchController,
       autofocus: true,
-      style: const TextStyle(color: Colors.black),
+      style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
       onChanged: (val) {
         setState(() {
           _searchQuery = val.toLowerCase();
@@ -232,7 +230,6 @@ class _SettingsTabState extends State<SettingsTab> {
     BuildContext context, {
     bool isDanger = false,
   }) {
-    final theme = context.watch<ThemeProvider>();
 
     // ✅ FIX: isNotEmpty use (error fix)
     if (_isSearching &&
@@ -245,7 +242,7 @@ class _SettingsTabState extends State<SettingsTab> {
       onTap: onTap,
       leading: Icon(
         icon,
-        color: theme.isDark ? Colors.white : Colors.black,
+        color:  Theme.of(context).textTheme.bodySmall?.color,
       ),
       title: Text(
         title,
@@ -253,13 +250,13 @@ class _SettingsTabState extends State<SettingsTab> {
           fontWeight: FontWeight.bold,
           color: isDanger
               ? Colors.red
-              : (theme.isDark ? Colors.white : Colors.black),
+              : ( Theme.of(context).textTheme.bodySmall?.color),
         ),
       ),
       subtitle: Text(
         subtitle,
         style: TextStyle(
-          color: theme.isDark ? Colors.white70 : Colors.black54,
+          color:  Theme.of(context).textTheme.bodySmall?.color,
         ),
       ),
     );
@@ -272,7 +269,7 @@ class _SettingsTabState extends State<SettingsTab> {
       title: Text(
         "Dark Mode",
         style: TextStyle(
-          color: theme.isDark ? Colors.white : Colors.black,
+          color: Theme.of(context).textTheme.bodySmall?.color,
         ),
       ),
       value: theme.isDark,
@@ -281,45 +278,6 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 // ================== Block List ==================
 
-// ================= FONT SIZE (NEW) =================
-  Widget _buildFontSizeTile(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
-    final theme = context.watch<ThemeProvider>();
-    final color = theme.isDark ? Colors.white : Colors.black;
-
-    return ListTile(
-      leading: Icon(Icons.text_fields, color: color),
-      title: Text(
-        "Font Size",
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(
-        settings.fontSize == 12.0
-            ? 'Small'
-            : settings.fontSize == 18.0
-                ? 'Large'
-                : 'Medium',
-        style: TextStyle(color: theme.isDark ? Colors.white70 : Colors.black54),
-      ),
-      trailing: PopupMenuButton<String>(
-        icon: Icon(Icons.arrow_drop_down, color: color),
-        onSelected: (value) {
-          if (value == 'small') {
-            context.read<SettingsProvider>().setSmallFont();
-          } else if (value == 'medium') {
-            context.read<SettingsProvider>().setMediumFont();
-          } else {
-            context.read<SettingsProvider>().setLargeFont();
-          }
-        },
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: 'small', child: Text('Small')),
-          PopupMenuItem(value: 'medium', child: Text('Medium')),
-          PopupMenuItem(value: 'large', child: Text('Large')),
-        ],
-      ),
-    );
-  }
 
   Widget _buildDivider(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
@@ -346,13 +304,13 @@ class _SettingsTabState extends State<SettingsTab> {
         title: Text(
           "AquaTalk User",
           style: TextStyle(
-            color: theme.isDark ? Colors.white : Colors.black,
+            color: Theme.of(context).textTheme.bodySmall?.color,
           ),
         ),
         subtitle: Text(
           "Tap to edit profile",
           style: TextStyle(
-            color: theme.isDark ? Colors.white70 : Colors.black54,
+            color: Theme.of(context).textTheme.bodySmall?.color,
           ),
         ),
       );
@@ -381,13 +339,13 @@ class _SettingsTabState extends State<SettingsTab> {
           title: Text(
             displayName,
             style: TextStyle(
-              color: theme.isDark ? Colors.white : Colors.black,
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ),
           subtitle: Text(
             about,
             style: TextStyle(
-              color: theme.isDark ? Colors.white70 : Colors.black54,
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ),
         );
@@ -402,10 +360,10 @@ class _SettingsTabState extends State<SettingsTab> {
       children: [
         Text("from",
             style: TextStyle(
-                color: theme.isDark ? Colors.white54 : Colors.black54)),
+                color: Theme.of(context).textTheme.bodySmall?.color)),
         Text("JM",
             style: TextStyle(
-                color: theme.isDark ? Colors.white : Colors.black,
+                color: Theme.of(context).textTheme.bodySmall?.color,
                 fontWeight: FontWeight.bold)),
       ],
     );
@@ -419,7 +377,7 @@ class _SettingsTabState extends State<SettingsTab> {
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          color: theme.isDark ? Colors.white70 : Colors.black54,
+          color: Theme.of(context).textTheme.bodySmall?.color,
           fontWeight: FontWeight.bold,
         ),
       ),

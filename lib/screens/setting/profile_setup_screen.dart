@@ -137,7 +137,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile Setup"),
-        backgroundColor: darkTeal,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
 
       // ================= GRADIENT BACKGROUND =================

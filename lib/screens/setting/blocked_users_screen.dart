@@ -55,16 +55,16 @@ Future<void> _unblockUser(String blockedUserId) async {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                   Text(
                     "Unblock User?",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                    style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodySmall?.color),
                   ),
                   const SizedBox(height: 15),
 
                   ListTile(
                     leading: const Icon(Icons.lock_open, color: Colors.green),
-                    title: const Text("Unblock",
-                        style: TextStyle(color: Colors.white)),
+                    title: Text("Unblock",
+                        style: TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color,)),
                     onTap: () async {
                       Navigator.pop(context);
                       await _unblockUser(userId);
@@ -73,8 +73,8 @@ Future<void> _unblockUser(String blockedUserId) async {
 
                   ListTile(
                     leading: const Icon(Icons.close, color: Colors.red),
-                    title: const Text("Cancel",
-                        style: TextStyle(color: Colors.white)),
+                    title: Text("Cancel",
+                        style: TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color,)),
                     onTap: () => Navigator.pop(context),
                   ),
                 ],
@@ -91,7 +91,7 @@ Future<void> _unblockUser(String blockedUserId) async {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Block List'),
-        backgroundColor: const Color(0xFF004D40),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
 
       body: StreamBuilder<DocumentSnapshot>(

@@ -25,7 +25,7 @@ class SharedMediaScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Media, Links & Docs'),
-        backgroundColor: const Color(0xFF004D40),
+       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -100,8 +100,8 @@ class SharedMediaScreen extends StatelessWidget {
                                   : isDoc
                                       ? 'Document link'
                                       : 'Shared link',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color:  Theme.of(context).textTheme.bodySmall?.color,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -141,15 +141,15 @@ class SharedMediaScreen extends StatelessWidget {
                       if (text.isNotEmpty)
                         Text(
                           text,
-                          style: const TextStyle(color: Colors.white70),
+                          style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
                         ),
                       if (isLink && text.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
                             text,
-                            style: const TextStyle(
-                              color: Colors.lightBlueAccent,
+                            style:  TextStyle(
+                              color: Theme.of(context).textTheme.bodySmall?.color,
                               decoration: TextDecoration.underline,
                             ),
                           ),
@@ -157,7 +157,7 @@ class SharedMediaScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Sent at ${doc['timestamp'] is Timestamp ? (doc['timestamp'] as Timestamp).toDate() : DateTime.now()}',
-                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                        style: TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color, fontSize: 12),
                       ),
                     ],
                   ),

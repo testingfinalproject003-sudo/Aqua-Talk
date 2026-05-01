@@ -50,8 +50,8 @@ class _StoryScreenState extends State<StoryScreen> {
                 children: [
                   Container(width: 40, height: 4, color: Colors.white24),
                   const SizedBox(height: 20),
-                  const Text("Status privacy",
-                      style: TextStyle(color: Colors.white, fontSize: 18)),
+                   Text("Status privacy",
+                      style: TextStyle(color:Theme.of(context).textTheme.bodySmall?.color, fontSize: 18)),
                   const SizedBox(height: 10),
 
                   _buildPrivacyOption("My contacts", setDialogState),
@@ -61,8 +61,8 @@ class _StoryScreenState extends State<StoryScreen> {
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("DONE",
-                        style: TextStyle(color: Colors.white)),
+                    child:  Text("DONE",
+                        style: TextStyle(color:Theme.of(context).textTheme.bodySmall?.color)),
                   ),
                 ],
               ),
@@ -81,7 +81,7 @@ class _StoryScreenState extends State<StoryScreen> {
         setDialogState(() => _selectedPrivacy = title);
         setState(() => _selectedPrivacy = title);
       },
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      title: Text(title, style: TextStyle(color:Theme.of(context).textTheme.bodySmall?.color,)),
       leading: Icon(
         isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
         color: isSelected ? accentTeal : Colors.white70,
@@ -158,7 +158,7 @@ class _StoryScreenState extends State<StoryScreen> {
       // ================= APP BAR =================
       appBar: AppBar(
         
-        backgroundColor: primaryTeal,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
 
         // 👇 SAME FIX (spacing)
@@ -169,15 +169,15 @@ class _StoryScreenState extends State<StoryScreen> {
 
         title: _isSearching
             ? _buildSearchField()
-            : const Text("Updates",
+            :  Text("Updates",
                 style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
+                    color: Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.bold)),
 
         actions: [
           IconButton(
             icon: Icon(
               _isSearching ? Icons.close : Icons.search,
-              color: Colors.white,
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
             onPressed: () =>
                 setState(() => _isSearching = !_isSearching),
@@ -257,13 +257,13 @@ class _StoryScreenState extends State<StoryScreen> {
                     )
                 ],
               ),
-              title: const Text("My Status",
-                  style: TextStyle(color: primaryTeal)),
+              title: Text("My Status",
+                  style: TextStyle(color:Theme.of(context).textTheme.bodySmall?.color,)),
               subtitle: Text(
                 hasMyStatus
                     ? "View your update"
                     : "Tap to add status update",
-                    style: const TextStyle(color: Colors.grey ),
+                    style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color ),
               ),
             ),
 
@@ -325,7 +325,7 @@ class _StoryScreenState extends State<StoryScreen> {
             : FileImage(File(story.image)) as ImageProvider,
       ),
       title: Text(story.userName,
-          style: const TextStyle(color: primaryTeal)),
+          style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
       subtitle: const Text("Just now"),
     );
   }
@@ -334,11 +334,11 @@ class _StoryScreenState extends State<StoryScreen> {
   Widget _buildSearchField() {
     return TextField(
       controller: _searchController,
-      style: const TextStyle(color: Colors.white),
-      decoration: const InputDecoration(
+      style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+      decoration:  InputDecoration(
         hintText: "Search updates...",
         border: InputBorder.none,
-        hintStyle: TextStyle(color: Colors.white54),
+        hintStyle: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
       ),
       onChanged: (val) =>
           setState(() => _searchQuery = val.toLowerCase()),
@@ -364,7 +364,7 @@ class _StoryScreenState extends State<StoryScreen> {
           const SizedBox(height: 8),
           Text(label,
               style:
-                  const TextStyle(color: Colors.white, fontSize: 12)),
+                   TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12)),
         ],
       ),
     );

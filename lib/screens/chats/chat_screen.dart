@@ -89,7 +89,7 @@ bool isBlockedByOther = false;
 
     if (hasSelection) {
       return AppBar(
-        backgroundColor: const Color(0xFF00332F),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () =>
@@ -123,7 +123,7 @@ bool isBlockedByOther = false;
     }
 
     return AppBar(
-      backgroundColor: const Color(0xFF004D40),
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       title: GestureDetector(
         onTap: () {
           Navigator.push(
@@ -166,7 +166,7 @@ bool isBlockedByOther = false;
 ),
                 Text(
                   titleStatus,
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  style: TextStyle(fontSize: 12, color:  Theme.of(context).textTheme.bodySmall?.color,),
                 ),
               ],
             ),
@@ -221,10 +221,8 @@ onUnblock: () async {
           ),
         );
       },
-      onTheme: _showThemeOptions,
       onDisappearing: _showDisappearingOptions,
       onGallery: _showGalleryPicker,
-      onReport: _confirmReport,
       onBlock: _confirmBlock,
       onClearChat: _confirmClearChat,
     );
@@ -238,65 +236,6 @@ onUnblock: () async {
     });
   }
 
-  void _showThemeOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: const Color(0xFF004D40),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Choose chat theme',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _buildThemeOption('teal', Colors.teal),
-                  _buildThemeOption('blue', Colors.blue),
-                  _buildThemeOption('purple', Colors.purple),
-                  _buildThemeOption('orange', Colors.deepOrange),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildThemeOption(String theme, Color color) {
-    return GestureDetector(
-      onTap: () async {
-        final navigator = Navigator.of(context);
-        final messenger = ScaffoldMessenger.of(context);
-        final chatProvider = context.read<ChatProvider>();
-
-        await chatProvider.toggleChatTheme(chatId: widget.chatId, theme: theme);
-        if (!mounted) return;
-        navigator.pop();
-        messenger.showSnackBar(
-          SnackBar(content: Text('Chat theme changed to $theme')),
-        );
-      },
-      child: Chip(
-        backgroundColor: color,
-        label: Text(theme, style: const TextStyle(color: Colors.white)),
-      ),
-    );
-  }
 
   void _showDisappearingOptions() {
     showModalBottomSheet(
@@ -315,9 +254,9 @@ onUnblock: () async {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+               Text(
                 'Disappearing messages',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color, fontSize: 16),
               ),
               const SizedBox(height: 16),
               _buildDisappearingOption('off', 'Off'),
@@ -333,7 +272,7 @@ onUnblock: () async {
   Widget _buildDisappearingOption(String mode, String label) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(label, style: const TextStyle(color: Colors.white)),
+      title: Text(label, style:  TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color,)),
       onTap: () async {
         final navigator = Navigator.of(context);
         final messenger = ScaffoldMessenger.of(context);
@@ -373,16 +312,16 @@ onUnblock: () async {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Attach from gallery',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
               ),
-              const SizedBox(height: 14),
+               SizedBox(height: 14),
               ListTile(
-                leading: const Icon(Icons.image, color: Colors.white),
-                title: const Text(
+                leading:  Icon(Icons.image, color:  Theme.of(context).textTheme.bodySmall?.color,),
+                title:  Text(
                   'Image',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
                 ),
                 onTap: () async {
                   Navigator.pop(context);
@@ -390,10 +329,10 @@ onUnblock: () async {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.videocam, color: Colors.white),
-                title: const Text(
+                leading:  Icon(Icons.videocam, color:  Theme.of(context).textTheme.bodySmall?.color,),
+                title:  Text(
                   'Video',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
                 ),
                 onTap: () async {
                   Navigator.pop(context);
@@ -429,40 +368,6 @@ onUnblock: () async {
       SnackBar(content: Text(isVideo ? 'Video attached' : 'Image attached')),
     );
   }
-
-  void _confirmReport() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Report user'),
-          content: const Text('Do you want to report this user?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                Navigator.pop(context);
-                await context.read<ChatProvider>().reportUser(
-                  chatId: widget.chatId,
-                  reportedUserId: widget.userId,
-                );
-                if (!mounted) return;
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('User reported')),
-                );
-              },
-              child: const Text('Report'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _confirmBlock() {
     showDialog(
       context: context,
@@ -585,18 +490,18 @@ onUnblock: () async {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                     Text(
                         'Delete selected messages',
                         style: TextStyle(
-                          color: Colors.white,
+                          color:  Theme.of(context).textTheme.bodySmall?.color,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                       Text(
                         'Choose delete option',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
                       ),
                       const SizedBox(height: 20),
                       _glassDialogButton(
@@ -1126,7 +1031,7 @@ if (!context.mounted) return;
           Expanded(
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: Colors.white),
+              style:  TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 hintText: 'Search messages',
                 hintStyle: TextStyle(color: Colors.white70),

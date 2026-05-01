@@ -9,7 +9,6 @@ import 'screens/login/splash_screen.dart';
 // import 'provider/audio_provider.dart';
 import 'provider/chat_provider.dart';
 import 'provider/story_provider.dart';
-import 'provider/settings_provider.dart';
 import 'provider/theme_provider.dart';
 import 'provider/message_provider.dart';
 import 'provider/chat_selection_provider.dart';
@@ -40,9 +39,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ChatProvider()),
-        // ChangeNotifierProvider(create: (_) => AudioProvider()),
         ChangeNotifierProvider(create: (_) => StoryProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => MessageProvider()),
         ChangeNotifierProvider(create: (_) => ChatSelectionProvider()),
@@ -59,14 +56,12 @@ class MaterialAppRoot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
-    final settings = context.watch<SettingsProvider>();
-    final fontScale = settings.fontSize / 14.0;
 
     final lightTheme = ThemeData(
       useMaterial3: true,
       primarySwatch: Colors.teal,
       brightness: Brightness.light,
-      textTheme: ThemeData.light().textTheme.apply(fontSizeFactor: fontScale),
+      textTheme: ThemeData.light().textTheme,
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF008080),
         foregroundColor: Colors.white,
@@ -77,7 +72,7 @@ class MaterialAppRoot extends StatelessWidget {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: const Color(0xFF121212),
-      textTheme: ThemeData.dark().textTheme.apply(fontSizeFactor: fontScale),
+      textTheme: ThemeData.dark().textTheme,
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF1F1F1F),
         foregroundColor: Colors.white,

@@ -74,7 +74,7 @@ class _StoryViewerState extends State<StoryViewer> {
         children: [
           Icon(icon, color: isDanger ? Colors.redAccent : accentTeal, size: 20),
           const SizedBox(width: 12),
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          Text(title, style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 14)),
         ],
       ),
     );
@@ -214,11 +214,11 @@ class _StoryViewerState extends State<StoryViewer> {
               borderRadius: BorderRadius.circular(30),
               border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
-            child: const TextField(
-              style: TextStyle(color: Colors.white),
+            child:  TextField(
+              style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
               decoration: InputDecoration(
                 hintText: "Reply...",
-                hintStyle: TextStyle(color: Colors.white54),
+                hintStyle: TextStyle(color:Theme.of(context).textTheme.bodySmall?.color,),
                 border: InputBorder.none,
                 suffixIcon: Icon(Icons.send, color: accentTeal),
               ),
