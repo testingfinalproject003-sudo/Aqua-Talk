@@ -1,13 +1,17 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart'; // ✅ terminal: flutter pub add emoji_picker_flutter
-import 'package:record/record.dart';
+
+
 class InputBar extends StatefulWidget {
   final Function(String) onSend;
   final String? initialDraft;
   final ValueChanged<String>? onDraftChanged;
   final ValueChanged<bool>? onTyping;
   final VoidCallback? onAttachmentTap;
+  final String chatId;
+  final String currentUserId;
+  final String receiverId;
 
   const InputBar({
     required this.onSend,
@@ -15,6 +19,9 @@ class InputBar extends StatefulWidget {
     this.onDraftChanged,
     this.onTyping,
     this.onAttachmentTap,
+    required this.chatId,
+    required this.currentUserId,
+    required this.receiverId,
     super.key,
   });
 
@@ -27,13 +34,8 @@ class _InputBarState extends State<InputBar> {
   final FocusNode focusNode = FocusNode();
   bool isTyping = false;
   bool showEmoji = false;
-  bool isRecording = false;
-  bool isLockedRecording = false;
-  double dragX = 0.0;
-  double dragY = 0.0;
   double playbackSpeed = 1.0;
-  final _audioRecorder = AudioRecorder();
-String? _audioPath;
+
   @override
   void initState() {
     super.initState();
@@ -66,38 +68,10 @@ String? _audioPath;
 
   @override
   void dispose() {
-    _audioRecorder.dispose();
     controller.dispose();
     focusNode.dispose();
     super.dispose();
   }
-
-  // --- Voice Clip Logic ---
-  Future<void> _startRecording() async {
-  if (await _audioRecorder.hasPermission()) {
-    _audioPath = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-    await _audioRecorder.start(
-      const RecordConfig(),
-      path: _audioPath!,
-    );
-
-    setState(() => isRecording = true);
-  }
-}
-
-Future<void> _stopRecording({bool cancel = false}) async {
-  final path = await _audioRecorder.stop();
-
-  setState(() {
-    isRecording = false;
-    isLockedRecording = false;
-  });
-
-  if (cancel || path == null) return;
-
-  widget.onSend(path);
-}
 
   // --- Glassy Attachment Menu ---
   void _showAttachmentMenu(BuildContext context) {
@@ -132,9 +106,6 @@ Future<void> _stopRecording({bool cancel = false}) async {
                   Navigator.pop(context);
                 }),
                 _buildActionItem(Icons.photo, "Gallery", Colors.purple, () {
-                  Navigator.pop(context);
-                }),
-                _buildActionItem(Icons.headset, "Audio", Colors.orange, () {
                   Navigator.pop(context);
                 }),
                 _buildActionItem(
@@ -243,120 +214,44 @@ Future<void> _stopRecording({bool cancel = false}) async {
                   },
                 ),
                 Expanded(
-                  child: isRecording
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            "Recording Voice... 0:01",
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                      : TextField(
-                          focusNode: focusNode,
-                          controller: controller,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            hintText: "Message",
-                            hintStyle: TextStyle(color: Colors.white54),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                          ),
-                        ),
-                ),
-                if (!isRecording)
-                  IconButton(
-                    icon: const Icon(Icons.attach_file, color: Colors.white70),
-                    onPressed:
-                        widget.onAttachmentTap ??
-                        () => _showAttachmentMenu(context),
-                  ),
-                if (!isRecording)
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (playbackSpeed == 1.0) {
-                          playbackSpeed = 1.5;
-                        } else if (playbackSpeed == 1.5) {
-                          playbackSpeed = 2.0;
-                        } else {
-                          playbackSpeed = 1.0;
-                        }
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white12,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        playbackSpeed == 1.0
-                            ? '1x'
-                            : playbackSpeed == 1.5
-                            ? '1.5x'
-                            : '2x',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
+                  child: TextField(
+                    focusNode: focusNode,
+                    controller: controller,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: "Message",
+                      hintStyle: TextStyle(color: Colors.white54),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
                       ),
                     ),
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.attach_file, color: Colors.white70),
+                  onPressed:
+                      widget.onAttachmentTap ??
+                      () => _showAttachmentMenu(context),
+                ),
                 const SizedBox(width: 8),
-                GestureDetector(
-                  onHorizontalDragUpdate: (details) {
-                    dragX += details.delta.dx;
-                    dragY += details.delta.dy;
-                  },
-                  onHorizontalDragEnd: (_) {
-                    if (isRecording && dragX < -60) {
-                      _stopRecording(cancel: true);
-                    }
-                    dragX = 0;
-                    dragY = 0;
-                  },
-                  onVerticalDragEnd: (_) {
-                    if (isRecording && dragY < -80) {
-                      setState(() => isLockedRecording = true);
-                    }
-                    dragX = 0;
-                    dragY = 0;
-                  },
-                  onLongPress: !isTyping ? _startRecording : null,
-                  onLongPressUp: isRecording && !isLockedRecording
-                      ? _stopRecording
-                      : null,
-                  onTap: () {
-                    if (isTyping) {
-                      widget.onSend(controller.text);
-                      controller.clear();
-                    }
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: isRecording
-                        ? Colors.red
-                        : const Color(0xFF46A59C),
-                    radius: 22,
-                    child: Icon(
-                      isTyping
-                          ? Icons.send
-                          : isLockedRecording
-                          ? Icons.lock
-                          : Icons.mic,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
+                isTyping
+                    ? GestureDetector(
+                        onTap: () {
+                          widget.onSend(controller.text);
+                          controller.clear();
+                        },
+                        child: const CircleAvatar(
+                          backgroundColor: Color(0xFF46A59C),
+                          radius: 22,
+                          child: Icon(
+                            Icons.send,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ],
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'screens/login/splash_screen.dart';
 
 // ================== PROVIDERS ==================
+// import 'provider/audio_provider.dart';
 import 'provider/chat_provider.dart';
 import 'provider/story_provider.dart';
 import 'provider/settings_provider.dart';
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        // ChangeNotifierProvider(create: (_) => AudioProvider()),
         ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),

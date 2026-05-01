@@ -11,7 +11,7 @@ import '../../provider/chat_provider.dart';
 import '../../provider/chat_selection_provider.dart';
 import 'message_bubble.dart';
 import 'shared_media_screen.dart';
-import 'blocked_users_screen.dart';
+import '../setting/blocked_users_screen.dart';
 import 'user_profile_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -44,6 +44,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
 bool isBlockedByCurrent = false;
 bool isBlockedByOther = false;
+
+//==== Recording ====
+// final _recorder = Record();
+// bool _isRecording = false;
+// String? _audioPath;
 
   String? _replyText;
   String? _replyId;
@@ -416,6 +421,7 @@ onUnblock: () async {
       receiverId: widget.userId,
       mediaPath: pickedFile.path,
       isVideo: isVideo,
+      // file: picked,
     );
 
     if (!mounted) return;
@@ -976,44 +982,48 @@ onUnblock: () async {
                           controller: _scrollController,
                           itemCount: docs.length,
                           itemBuilder: (_, i) {
-                            final data = docs[i];
-                            final isMe =
-                                data['senderId'] == widget.currentUserId;
+                            final document = docs[i];
+                            final data = (document.data() as Map<String, dynamic>?) ?? {};
+                            final isMe = data['senderId'] == widget.currentUserId;
                             final currentReactions =
                                 Map<String, List<dynamic>>.from(
                                   data['reactions'] ?? {},
                                 );
+                            final type = data['type']?.toString() ?? 'text';
+                            final messageText = type == 'audio'
+                                ? 'Audio message unavailable'
+                                : data['text']?.toString() ?? '';
 
                             return MessageBubble(
-                              text: data['text'] ?? '',
+                              text: messageText,
                               isMe: isMe,
                               time: _format(data['timestamp']),
                               chatId: widget.chatId,
-                              messageId: data.id,
+                              messageId: document.id,
                               currentUserId: widget.currentUserId,
                               reactions: currentReactions,
                               isEdited: data['isEdited'] ?? false,
                               isPinned: data['isPinned'] ?? false,
                               isStarred: data['isStarred'] ?? false,
-                              replyText: data['replyText'],
+                              replyText: data['replyText']?.toString(),
                               bubbleStyle:
                                   chatData['bubbleStyle'] ?? 'gradient',
                               highlightQuery: _searchQuery,
-                              image: data['image'],
+                              image: data['image']?.toString(),
                               onSwipeReply: () {
                                 setState(() {
-                                  _replyText = data['text'];
-                                  _replyId = data.id;
+                                  _replyText = data['text']?.toString();
+                                  _replyId = document.id;
                                 });
                               },
                               onLongPressAction: () =>
-                                  _showReactionBar(data.id, currentReactions),
+                                  _showReactionBar(document.id, currentReactions),
                               onReact: (emoji) async {
                                 await context
                                     .read<ChatProvider>()
                                     .toggleReaction(
                                       chatId: widget.chatId,
-                                      messageId: data.id,
+                                      messageId: document.id,
                                       emoji: emoji,
                                       uid: widget.currentUserId,
                                     );
@@ -1023,7 +1033,7 @@ onUnblock: () async {
                                     .read<ChatProvider>()
                                     .toggleReaction(
                                       chatId: widget.chatId,
-                                      messageId: data.id,
+                                      messageId: document.id,
                                       emoji: '❤️',
                                       uid: widget.currentUserId,
                                     );
@@ -1054,6 +1064,9 @@ onUnblock: () async {
                       ),
                     ),
                   InputBar(
+                    chatId: widget.chatId,
+                    currentUserId: widget.currentUserId,
+                    receiverId: widget.userId,
                     onSend: (text) async {
                       if (text.trim().isEmpty) return;
                       if (isBlockedByOther) {

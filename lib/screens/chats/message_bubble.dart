@@ -259,19 +259,19 @@ class MessageBubble extends StatelessWidget {
                               ),
                             )
                           : image!.toLowerCase().startsWith('http')
-                          ? Image.network(image!, fit: BoxFit.cover)
-                          : File(image!).existsSync()
-                          ? Image.file(File(image!), fit: BoxFit.cover)
-                          : Container(
-                              height: 120,
-                              color: Colors.black12,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.white60,
-                                ),
-                              ),
-                            ),
+                              ? Image.network(image!, fit: BoxFit.cover)
+                              : File(image!).existsSync()
+                                  ? Image.file(File(image!), fit: BoxFit.cover)
+                                  : Container(
+                                      height: 120,
+                                      color: Colors.black12,
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.broken_image,
+                                          color: Colors.white60,
+                                        ),
+                                      ),
+                                    ),
                     ),
                   if (hasImage) const SizedBox(height: 10),
                   _buildTextWidget(),

@@ -15,6 +15,7 @@ import 'package:aqua_talk/screens/setting/privacy_screen.dart';
 import 'package:aqua_talk/screens/setting/favorite_screen.dart';
 import 'package:aqua_talk/screens/login/login_screen.dart';
 
+import 'blocked_users_screen.dart'; // Add 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
 
@@ -130,6 +131,20 @@ class _SettingsTabState extends State<SettingsTab> {
           _buildSectionTitle("Personalization", context),
 
           _buildGlassGroup(context, [
+            _buildSettingsTile(
+  Icons.block,
+  "Blocked Users",
+  "Manage blocked accounts",
+  () {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _openScreen(
+      BlockedUsersScreen(currentUserId: uid),
+    );
+  },
+  context,
+),
             _buildThemeSwitch(context),
             _buildDivider(context),
             _buildFontSizeTile(context),
@@ -264,7 +279,9 @@ class _SettingsTabState extends State<SettingsTab> {
       onChanged: (val) => theme.toggleTheme(),
     );
   }
+// ================== Block List ==================
 
+// ================= FONT SIZE (NEW) =================
   Widget _buildFontSizeTile(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
     final theme = context.watch<ThemeProvider>();

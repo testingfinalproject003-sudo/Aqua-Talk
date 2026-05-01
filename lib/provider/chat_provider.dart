@@ -7,6 +7,9 @@ import '../models/chat_model.dart';
 import '../models/message_model.dart';
 import '../services/chat_service.dart';
 
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+
 class ChatProvider with ChangeNotifier {
   final ChatService _chatService = ChatService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -14,6 +17,40 @@ class ChatProvider with ChangeNotifier {
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   
+//===================== Send Images =======================
+Future<void> sendImageMessage({
+  required String chatId,
+  required String senderId,
+  required String receiverId,
+  required XFile file,
+}) async {
+  final bytes = await file.readAsBytes();
+
+  // 1. Upload to Firebase Storage
+  final ref = FirebaseStorage.instance
+      .ref()
+      .child('chat_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+  await ref.putData(bytes);
+
+  // 2. Get URL
+  final imageUrl = await ref.getDownloadURL();
+
+  // 3. Save message in Firestore
+  await FirebaseFirestore.instance
+      .collection('chats')
+      .doc(chatId)
+      .collection('messages')
+      .add({
+    'senderId': senderId,
+    'receiverId': receiverId,
+    'image': imageUrl,
+    'text': '',
+    'timestamp': FieldValue.serverTimestamp(),
+    'type': 'image',
+    'mediaUrl': imageUrl,
+  });
+}
 
   // ================== MARK AS READ ==================
   Future<void> markAsRead(String chatId) async {
@@ -570,12 +607,12 @@ Future<void> toggleReaction({
   // ================== SAVE DRAFT ==================
   Future<void> saveDraft(String chatId, String text) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('draft_$chatId', text);
+    await prefs.setString('draft_chat_$chatId', text);
   }
 
   Future<String> getDraft(String chatId) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('draft_$chatId') ?? '';
+    return prefs.getString('draft_chat_$chatId') ?? '';
   }
 
   // ================== ARCHIVE ==================
