@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../provider/story_provider.dart';
+import '../../models/story_model.dart';
 
 class StoryViewer extends StatefulWidget {
   final int initialIndex;
+  final List<StoryModel>? stories;
 
-  const StoryViewer({super.key, required this.initialIndex});
+  const StoryViewer({super.key, required this.initialIndex, this.stories});
 
   @override
   State<StoryViewer> createState() => _StoryViewerState();
@@ -46,7 +48,7 @@ class _StoryViewerState extends State<StoryViewer> {
   }
 
   void nextStory() {
-    final stories = context.read<StoryProvider>().stories;
+    final stories = widget.stories ?? context.read<StoryProvider>().stories;
     if (currentIndex < stories.length - 1) {
       if (mounted) {
         setState(() {
@@ -80,9 +82,30 @@ class _StoryViewerState extends State<StoryViewer> {
     );
   }
 
+  Widget _buildStoryImage(String imagePath) {
+    if (imagePath.isEmpty) {
+      return Container(color: Colors.black);
+    }
+
+    if (imagePath.startsWith('http')) {
+      return Image.network(imagePath, fit: BoxFit.cover);
+    }
+
+    final normalizedPath = imagePath.startsWith('file://')
+        ? Uri.parse(imagePath).toFilePath()
+        : imagePath;
+
+    final file = File(normalizedPath);
+    if (!file.existsSync()) {
+      return Container(color: Colors.black);
+    }
+
+    return Image.file(file, fit: BoxFit.cover);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final stories = context.watch<StoryProvider>().stories;
+    final stories = widget.stories ?? context.watch<StoryProvider>().stories;
     if (stories.isEmpty) return const SizedBox();
     
     final story = stories[currentIndex];
@@ -95,9 +118,7 @@ class _StoryViewerState extends State<StoryViewer> {
         children: [
           // 1. IMAGE CONTENT
           Positioned.fill(
-            child: story.image.startsWith("http")
-                ? Image.network(story.image, fit: BoxFit.cover)
-                : Image.file(File(story.image), fit: BoxFit.cover),
+            child: _buildStoryImage(story.image),
           ),
 
           // 2. TAP CONTROLS

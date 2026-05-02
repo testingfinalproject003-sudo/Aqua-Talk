@@ -1,31 +1,23 @@
-// import 'dart:typed_data';
+import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 
-import '../../services/phone_contact_service.dart';
 import '../chats/chat_screen.dart';
 
 class PhoneContactsScreen extends StatefulWidget {
   const PhoneContactsScreen({super.key});
 
   @override
-  State<PhoneContactsScreen> createState() =>
-      _PhoneContactsScreenState();
+  State<PhoneContactsScreen> createState() => _PhoneContactsScreenState();
 }
 
 class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
-  final service = PhoneContactService();
-
-  List<Contact> phoneContacts = [];
-  List<Contact> _filtered = [];
-
-  // ✅ Registered aur unregistered alag
-  List<Contact> registeredContacts = [];
-  List<Contact> unregisteredContacts = [];
-
-  Map<String, dynamic> firebaseUsers = {};
+  List<Map<String, dynamic>> registeredContacts = [];
+  List<Map<String, dynamic>> unregisteredContacts = [];
+  List<Map<String, dynamic>> firebaseUsersList = [];
+  Map<String, dynamic>? currentUserContact;
 
   bool loading = true;
   bool _isSearching = false;
@@ -38,140 +30,173 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
   @override
   void initState() {
     super.initState();
-    loadContacts();
+    _loadContacts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   // ================= NORMALIZE PHONE =================
-  String normalizePhone(String phone) {
+  String _normalizePhone(String phone) {
     phone = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-
     if (phone.startsWith('+')) return phone;
-    if (phone.startsWith('0')) return '+92${phone.substring(1)}';
-    if (phone.startsWith('92')) return '+$phone';
-
+    if (phone.startsWith('0') && phone.length == 11) return '+92${phone.substring(1)}';
+    if (phone.startsWith('92') && phone.length >= 12) return '+$phone';
     return '+92$phone';
   }
 
   // ================= LOAD CONTACTS =================
-  Future<void> loadContacts() async {
-    final permission = await service.requestPermission();
-
-    if (!permission) {
+  Future<void> _loadContacts() async {
+  try {
+    final status = await FlutterContacts.permissions
+        .request(PermissionType.readWrite);
+    if (status != PermissionStatus.granted &&
+        status != PermissionStatus.limited) {
       setState(() => loading = false);
       return;
     }
 
-    phoneContacts = await service.getContacts();
+    final List<Contact> phoneContacts = await FlutterContacts.getAll(
+      properties: {ContactProperty.phone},
+    );
 
-    // ✅ Firestore se saare users lo
     final snapshot =
         await FirebaseFirestore.instance.collection('users').get();
 
+    final Map<String, Map<String, dynamic>> firebaseUsers = {};
+    Map<String, dynamic>? loginUserData;
+
+    firebaseUsersList = [];
     for (var doc in snapshot.docs) {
       final data = doc.data();
-      final rawPhone = (data['phone'] ?? '').toString();
-      if (rawPhone.isEmpty) continue;
+      final rawPhone = (data['phone'] ?? '').toString().trim();
+      final normalizedPhone = rawPhone.isNotEmpty ? _normalizePhone(rawPhone) : '';
+      if (normalizedPhone.isNotEmpty) {
+        firebaseUsers[normalizedPhone] = data;
+      }
 
-      final normalizedPhone = normalizePhone(rawPhone);
-      firebaseUsers[normalizedPhone] = data;
+      if (doc.id == currentUid) {
+        loginUserData = data;
+        continue;
+      }
+
+      firebaseUsersList.add({
+        'uid': doc.id,
+        'name': data['name'] ?? 'User',
+        'phone': normalizedPhone,
+        'profilePic': data['profilePic'] ?? '',
+        'about': data['about'] ?? '',
+      });
     }
 
-    // ✅ Registered aur unregistered alag karo
-    // Apna khud ka number exclude karo
+    final myPhone =
+        currentPhone != null ? _normalizePhone(currentPhone!) : '';
+
+    currentUserContact = {
+      'name': loginUserData != null ? loginUserData['name'] ?? 'You' : 'You',
+      'phone': loginUserData != null &&
+              loginUserData['phone'] != null &&
+              loginUserData['phone'].toString().trim().isNotEmpty
+          ? _normalizePhone(loginUserData['phone'].toString().trim())
+          : myPhone,
+      'uid': currentUid,
+      'profilePic': loginUserData != null ? loginUserData['profilePic'] ?? '' : '',
+      'about': loginUserData != null ? loginUserData['about'] ?? '' : '',
+    };
+
     registeredContacts = [];
     unregisteredContacts = [];
 
     for (var contact in phoneContacts) {
-      if (contact.phones.isEmpty) {
-        unregisteredContacts.add(contact);
-        continue;
-      }
+      if (contact.phones.isEmpty) continue;
 
-      final phone = normalizePhone(contact.phones.first.number);
+      final normalized = _normalizePhone(contact.phones.first.number);
+      if (normalized == myPhone) continue;
 
-      // ✅ Apna number skip karo
-      if (currentPhone != null && normalizePhone(currentPhone!) == phone) {
-        continue;
-      }
+      final displayName = (contact.displayName ?? '').trim(); // ✅ null safe
 
-      if (firebaseUsers.containsKey(phone)) {
-        registeredContacts.add(contact);
+      if (firebaseUsers.containsKey(normalized)) {
+        final userData = firebaseUsers[normalized]!;
+        registeredContacts.add({
+          'name': displayName.isNotEmpty      // ✅ null safe
+              ? displayName
+              : userData['name'] ?? 'User',
+          'phone': normalized,
+          'uid': userData['uid'] ?? '',
+          'profilePic': userData['profilePic'] ?? '',
+          'about': userData['about'] ?? '',
+        });
       } else {
-        unregisteredContacts.add(contact);
+        unregisteredContacts.add({
+          'name': displayName,               // ✅ null safe
+          'phone': normalized,
+          'uid': '',
+          'profilePic': '',
+        });
       }
     }
 
-    setState(() {
-      loading = false;
-      _filtered = [...registeredContacts, ...unregisteredContacts];
-    });
+    final registeredUserIds = registeredContacts
+        .map((contact) => contact['uid']?.toString())
+        .whereType<String>()
+        .toSet();
+    firebaseUsersList = firebaseUsersList
+        .where((user) => !registeredUserIds.contains(user['uid']))
+        .toList();
+  } catch (e) {
+    log('Contact load error: $e');
   }
 
-  // ================= SEARCH =================
-  void _onSearch(String query) {
-    setState(() {
-      _query = query.toLowerCase();
+  setState(() => loading = false);
+}
 
-      if (_query.isEmpty) {
-        _filtered = [...registeredContacts, ...unregisteredContacts];
-        return;
-      }
-
-      final filteredRegistered = registeredContacts.where((contact) {
-        final name = (contact.displayName ?? '').toLowerCase();
-        final phone = contact.phones.isNotEmpty
-            ? contact.phones.first.number.toLowerCase()
-            : '';
-        return name.contains(_query) || phone.contains(_query);
-      }).toList();
-
-      final filteredUnregistered = unregisteredContacts.where((contact) {
-        final name = (contact.displayName ?? '').toLowerCase();
-        final phone = contact.phones.isNotEmpty
-            ? contact.phones.first.number.toLowerCase()
-            : '';
-        return name.contains(_query) || phone.contains(_query);
-      }).toList();
-
-      _filtered = [...filteredRegistered, ...filteredUnregistered];
-    });
+  // ================= FILTERED LISTS =================
+  List<Map<String, dynamic>> get _filteredRegistered {
+    if (_query.isEmpty) return registeredContacts;
+    return registeredContacts.where((c) {
+      final name = (c['name'] ?? '').toLowerCase();
+      final phone = (c['phone'] ?? '').toLowerCase();
+      return name.contains(_query) || phone.contains(_query);
+    }).toList();
   }
 
-  // ================= CHECK REGISTERED =================
-  bool isRegistered(String phone) {
-    return firebaseUsers.containsKey(normalizePhone(phone));
+  List<Map<String, dynamic>> get _filteredUnregistered {
+    if (_query.isEmpty) return unregisteredContacts;
+    return unregisteredContacts.where((c) {
+      final name = (c['name'] ?? '').toLowerCase();
+      final phone = (c['phone'] ?? '').toLowerCase();
+      return name.contains(_query) || phone.contains(_query);
+    }).toList();
   }
 
-  // ================= CHAT =================
-  Future<String> getOrCreateChat(String otherUid) async {
-    final chatsRef = FirebaseFirestore.instance.collection("chats");
+  // ================= GET OR CREATE CHAT =================
+  Future<String> _getOrCreateChat(String otherUid) async {
+    final chatsRef = FirebaseFirestore.instance.collection('chats');
 
     final query = await chatsRef
-        .where("participants", arrayContains: currentUid)
+        .where('participants', arrayContains: currentUid)
         .get();
 
     for (var doc in query.docs) {
       final users = List<String>.from(doc['participants']);
-      if (users.contains(otherUid)) {
-        return doc.id;
-      }
+      if (users.contains(otherUid)) return doc.id;
     }
 
     final newChat = await chatsRef.add({
-      "participants": [currentUid, otherUid],
-      "lastMessage": "",
-      "updatedAt": FieldValue.serverTimestamp(),
+      'participants': [currentUid, otherUid],
+      'lastMessage': '',
+      'updatedAt': FieldValue.serverTimestamp(),
     });
 
     return newChat.id;
   }
 
-  void openChat({
-    required String uid,
-    required String name,
-    required String image,
-  }) async {
-    final chatId = await getOrCreateChat(uid);
+  // ================= OPEN CHAT =================
+  void _openChat(Map<String, dynamic> user) async {
+    final chatId = await _getOrCreateChat(user['uid']);
     if (!mounted) return;
 
     Navigator.push(
@@ -180,10 +205,23 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
         builder: (_) => ChatScreen(
           chatId: chatId,
           currentUserId: currentUid,
-          userId: uid,
-          userName: name,
-          userImage: image,
+          userId: user['uid'],
+          userName: user['name'],
+          userImage: user['profilePic'],
           isOnline: true,
+        ),
+      ),
+    );
+  }
+
+  // ================= INVITE VIA SMS =================
+  void _inviteContact(Map<String, dynamic> contact) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Invite ${contact['name']} to Aqua Talk"),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
         ),
       ),
     );
@@ -192,183 +230,175 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
   // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
-    // ✅ Registered count filtered mein
-    final registeredInFiltered = _filtered
-        .where((c) =>
-            c.phones.isNotEmpty &&
-            isRegistered(c.phones.first.number))
-        .length;
+    final reg = _filteredRegistered;
+    final unreg = _filteredUnregistered;
+
+    final firebaseUsersFiltered = firebaseUsersList.where((user) {
+      final name = (user['name'] ?? '').toString().toLowerCase();
+      final phone = (user['phone'] ?? '').toString().toLowerCase();
+      return name.contains(_query) || phone.contains(_query);
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BackButton(),
         title: _isSearching
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
+                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  hintText: "Search contact...",
+                  hintText: 'Search contact...',
+                  hintStyle: TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                 ),
-                onChanged: _onSearch,
+                onChanged: (val) =>
+                    setState(() => _query = val.toLowerCase()),
               )
-            : const Text("Select Contact"),
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Select Contact'),
+                  Text(
+                    '${registeredContacts.length} on Aqua Talk',
+                    style: const TextStyle(
+                        fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
         actions: [
           _isSearching
               ? IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: () {
-                    setState(() {
-                      _isSearching = false;
-                      _query = '';
-                      _searchController.clear();
-                      _filtered = [
-                        ...registeredContacts,
-                        ...unregisteredContacts
-                      ];
-                    });
-                  },
+                  onPressed: () => setState(() {
+                    _isSearching = false;
+                    _query = '';
+                    _searchController.clear();
+                  }),
                 )
               : IconButton(
                   icon: const Icon(Icons.search),
-                  onPressed: () => setState(() => _isSearching = true),
+                  onPressed: () =>
+                      setState(() => _isSearching = true),
                 ),
         ],
       ),
 
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : _filtered.isEmpty
-              ? const Center(child: Text("No contacts found"))
-              : ListView.builder(
-                  // ✅ +2 for two section headers
-                  itemCount: _filtered.length + 2,
-                  itemBuilder: (_, i) {
+          : ListView(
+              padding: const EdgeInsets.only(bottom: 16),
+              children: [
+                if (currentUserContact != null) ...[
+                  _sectionHeader('Your Aqua Talk account', Colors.deepPurple),
+                  _contactTile(
+                    contact: currentUserContact!,
+                    isRegistered: true,
+                    onTap: null,
+                    subtitle: 'This device is logged in with this account',
+                  ),
+                ],
+                if (reg.isNotEmpty) ...[
+                  _sectionHeader('Contacts on Aqua Talk (${reg.length})', Colors.teal),
+                  ...reg.map((contact) => _contactTile(
+                        contact: contact,
+                        isRegistered: true,
+                        onTap: () => _openChat(contact),
+                      )),
+                ],
+                if (firebaseUsersFiltered.isNotEmpty) ...[
+                  _sectionHeader('Connectable Aqua Talk users (${firebaseUsersFiltered.length})', Colors.blueAccent),
+                  ...firebaseUsersFiltered.map((contact) => _contactTile(
+                        contact: contact,
+                        isRegistered: true,
+                        onTap: () => _openChat(contact),
+                      )),
+                ],
+                if (unreg.isNotEmpty) ...[
+                  _sectionHeader('Invite to Aqua Talk (${unreg.length})', Colors.grey),
+                  ...unreg.map((contact) => _contactTile(
+                        contact: contact,
+                        isRegistered: false,
+                        onTap: () => _inviteContact(contact),
+                      )),
+                ],
+                if (reg.isEmpty && unreg.isEmpty && currentUserContact == null)
+                  const Center(child: Padding(
+                    padding: EdgeInsets.only(top: 48),
+                    child: Text('No contacts found'),
+                  )),
+              ],
+            ),
+    );
+  }
 
-                    // ✅ HEADER 1 — Registered
-                    if (i == 0) {
-                      return _sectionHeader(
-                        "On Aqua Talk ($registeredInFiltered)",
-                        Colors.teal,
-                      );
-                    }
+  // ================= CONTACT TILE =================
+  Widget _contactTile({
+    required Map<String, dynamic> contact,
+    required bool isRegistered,
+    VoidCallback? onTap,
+    String? subtitle,
+  }) {
+    final name = (contact['name'] ?? '').toString();
+    final about = (contact['about'] ?? '').toString();
+    final phone = (contact['phone'] ?? '').toString();
+    final profilePic = (contact['profilePic'] ?? '').toString();
 
-                    // ✅ HEADER 2 — Unregistered
-                    if (i == registeredInFiltered + 1) {
-                      return _sectionHeader(
-                        "Invite to Aqua Talk",
-                        Colors.grey,
-                      );
-                    }
+    final displayedSubtitle = subtitle ??
+        (isRegistered
+            ? (about.isNotEmpty
+                ? about
+                : 'Hey there! I am using Aqua Talk')
+            : phone);
 
-                    // ✅ Actual contact index
-                    final contactIndex = i <= registeredInFiltered
-                        ? i - 1
-                        : i - 2;
-
-                    if (contactIndex < 0 ||
-                        contactIndex >= _filtered.length) {
-                      return const SizedBox.shrink();
-                    }
-
-                    final contact = _filtered[contactIndex];
-                    final phone = contact.phones.isNotEmpty
-                        ? normalizePhone(contact.phones.first.number)
-                        : "";
-
-                    final registered = isRegistered(phone);
-                    
-return ListTile(
-  leading: CircleAvatar(
-    backgroundColor: registered
-        ? Colors.teal.shade100
-        : Colors.grey.shade200,
-    child: Text(
-      (contact.displayName ?? '?')[0].toUpperCase(),
-      style: TextStyle(
-        color: registered ? Colors.teal : Colors.grey,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-                  
-
-                      title: Text(
-                        contact.displayName ?? "",
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-
-                      subtitle: Text(
-                        phone,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-
-                      trailing: registered
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.teal.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.teal),
-                              ),
-                              child: const Text(
-                                "Chat",
-                                style: TextStyle(
-                                  color: Colors.teal,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            )
-                          : Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(20),
-                                border:
-                                    Border.all(color: Colors.grey.shade400),
-                              ),
-                              child: const Text(
-                                "Invite",
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-
-                      onTap: () {
-                        if (registered) {
-                          final user = firebaseUsers[phone];
-                          openChat(
-                            uid: user['uid'] ?? "",
-                            name: user['name'] ?? "User",
-                            image: user['profilePic'] ?? "",
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  "Invite ${contact.displayName} to Aqua Talk"),
-                            ),
-                          );
-                        }
-                      },
-                    );
-                  },
+    return ListTile(
+      onTap: onTap,
+      enabled: onTap != null,
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: CircleAvatar(
+        radius: 22,
+        backgroundColor:
+            isRegistered ? Colors.teal.shade100 : const Color(0xFF627884),
+        backgroundImage:
+            profilePic.isNotEmpty ? NetworkImage(profilePic) : null,
+        child: profilePic.isEmpty
+            ? Text(
+                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: TextStyle(
+                  color: isRegistered ? Colors.teal : Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
+              )
+            : null,
+      ),
+      title: Text(
+        name,
+        style:
+            const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+      subtitle: Text(
+        displayedSubtitle,
+        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: !isRegistered
+          ? TextButton(
+              onPressed: onTap,
+              style: TextButton.styleFrom(foregroundColor: Colors.teal),
+              child: const Text('INVITE'),
+            )
+          : null,
     );
   }
 
   // ================= SECTION HEADER =================
   Widget _sectionHeader(String title, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: color.withValues(alpha: 0.08),
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Text(
         title,
         style: TextStyle(

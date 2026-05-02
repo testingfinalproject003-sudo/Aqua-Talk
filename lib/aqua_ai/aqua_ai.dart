@@ -18,7 +18,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
   // ====== OPENROUTER CONFIG ======
   static const String _apiKey = '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';
   static const String _model = 'google/gemma-3-12b-it:free';
-  static const String _apiUrl = 'https://openrouter.ai/workspaces/default/keys/508e44daec1b33129fde654d57fc67f4e6adae94cbedca9bc6ad3155cae983e9/stream';
+  static const String _apiUrl = 'https://openrouter.ai/v1/chat/completions';
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
@@ -50,13 +50,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_apiKey',
-          'HTTP-Referer': 'https://yourapp.com', // optional
-          'X-Title': 'Aqua Chat',                 // optional
+          'X-Title': 'Aqua Chat',
         },
         body: jsonEncode({
           'model': _model,
           'messages': apiMessages,
           'max_tokens': 500,
+          'temperature': 0.7,
         }),
       );
 
@@ -110,22 +110,25 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        backgroundColor: primary,
+        title: Row(
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.deepPurple,
-              child: Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+              backgroundColor: Colors.white,
+              child: Icon(Icons.auto_awesome, color: primary, size: 16),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('AI Assistant', style: TextStyle(fontSize: 15)),
-                Text('Llama 3.3 · Free',
-                    style: TextStyle(fontSize: 11, color: Colors.white70)),
+              children: const [
+                Text('Aqua AI', style: TextStyle(fontSize: 16)),
+                Text('Chat with your Aqua assistant',
+                    style: TextStyle(fontSize: 12, color: Colors.white70)),
               ],
             ),
           ],
@@ -135,16 +138,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
         children: [
           Expanded(
             child: _messages.isEmpty
-                ? const Center(
+                ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.auto_awesome,
-                            size: 52, color: Colors.deepPurple),
-                        SizedBox(height: 12),
+                            size: 52, color: primary),
+                        const SizedBox(height: 12),
                         Text('Ask me anything!',
-                            style:
-                                TextStyle(fontSize: 16, color: Colors.grey)),
+                            style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
                       ],
                     ),
                   )
@@ -230,24 +232,30 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Widget _buildBubble(String text, bool isUser) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Align(
-      alignment:
-          isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
         ),
         decoration: BoxDecoration(
-          color: isUser ? Colors.deepPurple : Colors.grey.shade200,
+          color: isUser ? primary : Colors.grey.shade200,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isUser ? 16 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 16),
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isUser ? 18 : 6),
+            bottomRight: Radius.circular(isUser ? 6 : 18),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color.fromRGBO(0, 0, 0, 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           text,

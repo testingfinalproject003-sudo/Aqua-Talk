@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../provider/story_provider.dart';
+import '../../models/story_model.dart';
+import '../../services/story_service.dart';
 import 'package:aqua_talk/screens/story/story_viewer.dart';
 import 'package:aqua_talk/screens/setting/settings_tab.dart';
 import 'package:aqua_talk/widgets/glass_container.dart';
@@ -27,6 +28,8 @@ class _StoryScreenState extends State<StoryScreen> {
 
   static const Color primaryTeal = Color(0xFF004D40);
   static const Color accentTeal = Color(0xFF80CBC4);
+
+  final StoryService _storyService = StoryService();
 
   // ================= PRIVACY =================
   void _showGlassyPrivacySheet(BuildContext context) {
@@ -146,12 +149,6 @@ class _StoryScreenState extends State<StoryScreen> {
 
     final hasMyStatus = myStories.isNotEmpty;
 
-    final filteredStories = provider.stories
-        .where((s) =>
-            s.userId != currentUserId &&
-            s.userName.toLowerCase().contains(_searchQuery))
-        .toList();
-
     return Scaffold(
       backgroundColor: Colors.transparent,
 
@@ -209,82 +206,121 @@ class _StoryScreenState extends State<StoryScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-    decoration: const BoxDecoration(
-      gradient: GradientProvider.mainGradient,
-      
-    ),
-      
-      child:SafeArea(
-        child: SingleChildScrollView(
-        
-        physics: const BouncingScrollPhysics(),
-        
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              onTap: () => hasMyStatus
-                  ? Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              const StoryViewer(initialIndex: 0)))
-                  : _showCameraOptions(context),
-              leading: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.grey.withValues(alpha: 0.1),
-                    backgroundImage: user?.photoURL != null
-                        ? NetworkImage(user!.photoURL!)
-                        : null,
-                    child: user?.photoURL == null
-                        ? const Icon(Icons.person, color: primaryTeal)
-                        : null,
-                  ),
-                  if (!hasMyStatus)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: accentTeal,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.add,
-                            size: 16, color: primaryTeal),
-                      ),
-                    )
-                ],
-              ),
-              title: Text("My Status",
-                  style: TextStyle(color:Theme.of(context).textTheme.bodySmall?.color,)),
-              subtitle: Text(
-                hasMyStatus
-                    ? "View your update"
-                    : "Tap to add status update",
-                    style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color ),
-              ),
-            ),
-
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text("RECENT UPDATES",
-                  style: TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.bold)),
-            ),
-
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: filteredStories.length,
-              itemBuilder: (_, i) =>
-                  _buildUserTile(filteredStories[i], i),
-            ),
-          ],
+        decoration: const BoxDecoration(
+          gradient: GradientProvider.mainGradient,
         ),
-      ),
-      ),
+        child: SafeArea(
+          child: StreamBuilder<List<StoryModel>>(
+            stream: _storyService.activeStoriesStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final activeStories = snapshot.data ?? [];
+              final otherStories = activeStories
+                  .where((story) => story.userId != currentUserId)
+                  .toList();
+
+              final storiesByUser = <String, List<StoryModel>>{};
+              for (final story in otherStories) {
+                storiesByUser.putIfAbsent(story.userId, () => []).add(story);
+              }
+
+              final latestStories = storiesByUser.values.map((userStories) {
+                userStories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                return userStories.first;
+              }).toList();
+
+              latestStories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+              final filteredStories = latestStories.where((story) {
+                return story.userName.toLowerCase().contains(_searchQuery);
+              }).toList();
+
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      onTap: () => hasMyStatus
+                          ? Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const StoryViewer(initialIndex: 0),
+                              ),
+                            )
+                          : _showCameraOptions(context),
+                      leading: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                            backgroundImage: user?.photoURL != null
+                                ? NetworkImage(user!.photoURL!)
+                                : null,
+                            child: user?.photoURL == null
+                                ? const Icon(Icons.person, color: primaryTeal)
+                                : null,
+                          ),
+                          if (!hasMyStatus)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: accentTeal,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.add,
+                                    size: 16, color: primaryTeal),
+                              ),
+                            )
+                        ],
+                      ),
+                      title: Text("My Status",
+                          style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+                      subtitle: Text(
+                        hasMyStatus
+                            ? "View your update"
+                            : "Tap to add status update",
+                        style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+                      ),
+                    ),
+
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text("RECENT UPDATES",
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+
+                    if (filteredStories.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Text(
+                          'No status updates available',
+                          style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: filteredStories.length,
+                        itemBuilder: (_, i) {
+                          final story = filteredStories[i];
+                          final userStories = storiesByUser[story.userId] ?? [story];
+                          return _buildStoryTile(story, userStories);
+                        },
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ),
     
 
@@ -311,22 +347,31 @@ class _StoryScreenState extends State<StoryScreen> {
   }
 
   // ================= USER TILE =================
-  Widget _buildUserTile(dynamic story, int index) {
+  Widget _buildStoryTile(StoryModel story, List<StoryModel> userStories) {
+    final imageUrl = story.image;
+
     return ListTile(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => StoryViewer(initialIndex: index),
+          builder: (_) => StoryViewer(
+            initialIndex: 0,
+            stories: userStories,
+          ),
         ),
       ),
       leading: CircleAvatar(
-        backgroundImage: story.image.startsWith('http')
-            ? NetworkImage(story.image)
-            : FileImage(File(story.image)) as ImageProvider,
+        backgroundImage: imageUrl.startsWith('http')
+            ? NetworkImage(imageUrl)
+            : null,
+        child: !imageUrl.startsWith('http') ? const Icon(Icons.person) : null,
       ),
       title: Text(story.userName,
-          style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
-      subtitle: const Text("Just now"),
+          style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+      subtitle: Text(
+        story.caption.isNotEmpty ? story.caption : 'Tap to view status',
+        style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+      ),
     );
   }
 

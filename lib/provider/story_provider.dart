@@ -15,10 +15,14 @@ class StoryProvider with ChangeNotifier {
     _stories.insert(
       0,
       StoryModel(
+        storyId: DateTime.now().millisecondsSinceEpoch.toString(),
         image: path,
-        userName: user?.displayName ?? "You", // Agar name nahi hai toh "You"
-        userId: user?.uid ?? "default_id",   // ✅ Error fix: userId provide kar di
-        time: DateTime.now(),                // ✅ Error fix: time provide kar diya
+        caption: '',
+        userName: user?.displayName ?? "You",
+        userId: user?.uid ?? "default_id",
+        createdAt: DateTime.now(),
+        expiresAt: DateTime.now().add(const Duration(hours: 24)),
+        views: const [],
         isVideo: isVideo,
       ),
     );
