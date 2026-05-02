@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../provider/story_provider.dart';
+import '../../provider/story_provider.dart';
 
 class StoryViewer extends StatefulWidget {
   final int initialIndex;

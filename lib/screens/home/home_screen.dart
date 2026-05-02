@@ -8,9 +8,14 @@ import 'package:provider/provider.dart';
 import '../../provider/theme_provider.dart';
 import '../../provider/gradient_provider.dart';
 import '../setting/contact_screen.dart';
-// import '../tabs/chat_tab.dart';
 
-import '../setting/settings_tab.dart';
+import 'package:aqua_talk/screens/setting/settings_tab.dart';
+
+import '../../screens/login/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../../aqua_ai/aqua_ai.dart';
+
 
 class AquaHomeScreen extends StatefulWidget {
   const AquaHomeScreen({super.key});
@@ -29,6 +34,16 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
     setState(() {
       currentIndex = index;
     });
+  }
+  // ================= LOGOUT =================
+ Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   // ---------------- IMAGE PICKER ----------------
@@ -83,10 +98,11 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
+             
+ 
 
-              _buildMenuTile(Icons.group_add_outlined, "New Group", () {
-                Navigator.pop(context);
-              }),
+ 
+              
 
               _buildMenuTile(
                 theme.isDark
@@ -101,8 +117,7 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
 
               const Divider(color: Colors.white10, indent: 20, endIndent: 20),
 
-              _buildMenuTile(Icons.logout_rounded, "Logout", () {},
-                  isDestructive: true),
+              _buildMenuTile(Icons.logout_rounded, "Logout", _logout, isDestructive: true),
 
               const SizedBox(height: 20),
             ],
@@ -273,24 +288,46 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
       // ---------------- FAB ----------------
       floatingActionButton: currentIndex == 2
     ? null
-    : FloatingActionButton(
-        backgroundColor: theme.isDark
-            ? const Color(0xFF80CBC4)
-            : darkTeal,
-        elevation: 4,
-        child: Icon(
-          currentIndex == 0
-              ? Icons.message_rounded
-              : Icons.camera_alt_rounded,
-          color: Colors.white,
-        ),
-        onPressed: () {
+    : Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          // ===== AI FAB (top) =====
+          Padding(
+            padding: const EdgeInsets.only(bottom: 70), // push above main FAB
+            child: FloatingActionButton(
+              heroTag: 'ai_chat',
+              backgroundColor:  Colors.orangeAccent,
+              mini: true, // smaller size so it doesn't overpower
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AiChatScreen()),
+                );
+              },
+              child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+            ),
+          ),
+
+          // ===== MAIN FAB (bottom) =====
+          FloatingActionButton(
+            heroTag: 'main_fab',
+            backgroundColor: theme.isDark
+                ? const Color(0xFF80CBC4)
+                : darkTeal,
+            elevation: 4,
+            child: Icon(
+              currentIndex == 0
+                  ? Icons.message_rounded
+                  : Icons.camera_alt_rounded,
+              color: Colors.white,
+            ),
+            onPressed: () {
           // ================== CHAT TAB ==================
           if (currentIndex == 0) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const ContactScreen(),
+                builder: (_) => const PhoneContactsScreen(),
               ),
             );
           }
@@ -301,6 +338,8 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
           }
         },
       ),
+        ]
+    )
     );
   }
 }

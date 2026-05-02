@@ -16,14 +16,14 @@ class ChatModel {
 
   final int unreadCount;
   final bool isFavorite;
-  final bool isGroup;
+  // final bool isGroup;
   final bool isArchived;
   final String chatTheme;
   final String bubbleStyle;
   final bool hideLastSeen;
   final bool readReceiptEnabled;
   final bool chatLocked;
-  final String disappearingMode;
+  
   final VoidCallback toggleFavorite;
   final VoidCallback markAsRead;
   final List<String> participants;
@@ -40,14 +40,14 @@ class ChatModel {
     this.isPinned = false,
     this.unreadCount = 0,
     this.isFavorite = false,
-    this.isGroup = false,
+    // this.isGroup = false,
     this.isArchived = false,
     this.chatTheme = 'default',
     this.bubbleStyle = 'default',
     this.hideLastSeen = false,
     this.readReceiptEnabled = true,
     this.chatLocked = false,
-    this.disappearingMode = 'off',
+   
     required this.toggleFavorite,
     required this.markAsRead,
     this.participants = const [],
@@ -66,14 +66,14 @@ class ChatModel {
       isPinned: map['isPinned'] ?? false,
       unreadCount: _parseUnreadCount(map['unreadCount']),
       isFavorite: map['isFavorite'] ?? false,
-      isGroup: map['isGroup'] ?? false,
+      // isGroup: map['isGroup'] ?? false,
       isArchived: map['isArchived'] ?? false,
       chatTheme: map['chatTheme'] ?? 'default',
       bubbleStyle: map['bubbleStyle'] ?? 'default',
       hideLastSeen: map['hideLastSeen'] ?? false,
       readReceiptEnabled: map['readReceiptEnabled'] ?? true,
       chatLocked: map['chatLocked'] ?? false,
-      disappearingMode: map['disappearingMode'] ?? 'off',
+     
       toggleFavorite: () {},
       markAsRead: () {},
       participants: map['participants'] is List ? List<String>.from(map['participants']) : const [],

@@ -45,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 🔥 FIREBASE: Send OTP Logic
   Future<void> _sendOTP() async {
+    if(!mounted) return;
     setState(() => isLoading = true);
     
     // Prefix agar 03 hai aur code +92, to hum format sahi karte hain (+923...)
@@ -68,12 +69,18 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         },
         verificationFailed: (FirebaseAuthException e) {
-          setState(() => isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? "Error occurred"), backgroundColor: Colors.red),
-          );
-        },
+  if (!mounted) return;
+  setState(() => isLoading = false);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(e.message ?? "Error occurred. Try again."),
+      backgroundColor: Colors.red,
+      // behavior: SnackBarBehavior.floating,
+    ),
+  );
+},
         codeSent: (String verificationId, int? resendToken) {
+          if (!mounted) return;
           setState(() => isLoading = false);
           // 🚀 Navigating to OTP Screen with real data
           Navigator.pushReplacement(
@@ -89,10 +96,16 @@ class _LoginScreenState extends State<LoginScreen> {
         codeAutoRetrievalTimeout: (String verificationId) {},
       );
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
       log("Error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Something went wrong. Try again.')),
+  );
+
     }
   }
+  
 
   // ✅ Number validation logic
   void validateNumber(String value) {
@@ -166,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
       resizeToAvoidBottomInset: true, 
       appBar: AppBar(
         centerTitle: true,
-        title: const Text("Enter your phone number", style: TextStyle(color: Color(0xFF004D40))),
+        title: const Text("Enter your phone number", style: TextStyle(color: Colors.white)),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
       ),

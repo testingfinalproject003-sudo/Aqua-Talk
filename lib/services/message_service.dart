@@ -66,6 +66,7 @@ class MessageService {
   Future<void> editMessage(
       String chatId, String messageId, String newText) async {
     await _firestore
+        
         .collection("chats")
         .doc(chatId)
         .collection("messages")
@@ -126,10 +127,10 @@ class MessageService {
         .doc(messageId);
 
     final snapshot = await ref.get();
-    final data = snapshot.data();
-
+    // final data = snapshot.data(); //   ========= >  snapshot.data() can be null, so we need to handle that case
+    final data = snapshot.data() ?? <String, dynamic>{};
     Map<String, dynamic> reactions =
-        Map<String, dynamic>.from(data?['reactions'] ?? {});
+        Map<String, dynamic>.from(data['reactions'] ?? {});
 
     if (reactions.containsKey(emoji)) {
       List users = List.from(reactions[emoji]);

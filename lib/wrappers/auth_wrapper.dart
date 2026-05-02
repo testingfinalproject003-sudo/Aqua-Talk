@@ -5,9 +5,9 @@
 
 // import '../screens/login/splash_screen.dart';
 // import '../screens/login/login_screen.dart';
-// import '../screens/onboarding_screen.dart';
-// import '../screens/home_screen.dart';
-// import '../screens/profile_setup_screen.dart';
+// import '../screens/login/onboarding_screen.dart';
+// import '../screens/home/home_screen.dart';
+// import '../screens/setting/profile_setup_screen.dart';
 
 // class AuthWrapper extends StatefulWidget {
 //   const AuthWrapper({super.key});

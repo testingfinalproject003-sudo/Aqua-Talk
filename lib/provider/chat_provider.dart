@@ -437,14 +437,7 @@ Future<void> toggleReaction({
     });
   }
 
-  Future<void> toggleDisappearingMode({
-    required String chatId,
-    required String mode,
-  }) async {
-    await _firestore.collection('chats').doc(chatId).update({
-      'disappearingMode': mode,
-    });
-  }
+  
 
   Future<void> toggleHideLastSeen({
     required String chatId,
@@ -556,39 +549,10 @@ Future<void> toggleReaction({
     });
   }
 
-  Future<void> applyDisappearingPolicy({
-    required String chatId,
-    required String mode,
-  }) async {
-    if (mode == 'off') return;
+ 
 
-    final duration = mode == '24h'
-        ? const Duration(hours: 24)
-        : const Duration(days: 7);
-    final threshold = DateTime.now().subtract(duration);
+   
 
-    final query = await _firestore
-        .collection('chats')
-        .doc(chatId)
-        .collection('messages')
-        .where('timestamp', isLessThan: Timestamp.fromDate(threshold))
-        .get();
-
-    if (query.docs.isEmpty) return;
-
-    final batch = _firestore.batch();
-    for (final doc in query.docs) {
-      final data = doc.data();
-      if (data['isDeleted'] == true) continue;
-      batch.update(doc.reference, {
-        'isDeleted': true,
-        'text': 'This message disappeared',
-        'deletedAt': FieldValue.serverTimestamp(),
-      });
-    }
-
-    await batch.commit();
-  }
 
   // ================== SAVE DRAFT ==================
   Future<void> saveDraft(String chatId, String text) async {

@@ -5,8 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../widgets/chat_menu_overlay.dart';
-import '../../widgets/input_bar.dart';
+import 'chat_menu_overlay.dart';
+import 'input_bar.dart';
 import '../../provider/chat_provider.dart';
 import '../../provider/chat_selection_provider.dart';
 import 'message_bubble.dart';
@@ -45,16 +45,13 @@ class _ChatScreenState extends State<ChatScreen> {
 bool isBlockedByCurrent = false;
 bool isBlockedByOther = false;
 
-//==== Recording ====
-// final _recorder = Record();
-// bool _isRecording = false;
-// String? _audioPath;
+
 
   String? _replyText;
   String? _replyId;
   String _searchQuery = '';
   bool _isSearchMode = false;
-  String _lastAppliedDisappearingMode = 'off';
+  
 
   Stream<DocumentSnapshot> get userStream =>
     FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots();
@@ -150,20 +147,39 @@ bool isBlockedByOther = false;
       .collection('users')
       .doc(widget.userId)
       .snapshots(),
-  builder: (context, snapshot) {
-    String name = widget.userName;
-
-    if (snapshot.hasData && snapshot.data!.data() != null) {
-      final data = snapshot.data!.data() as Map<String, dynamic>;
-      name = data['name'] ?? widget.userName;
+  builder: (context, userSnap) {
+    if (!userSnap.hasData || userSnap.data!.data() == null) {
+      return Text(widget.userName);
     }
 
-    return Text(
-      name,
-      style: const TextStyle(fontWeight: FontWeight.w600),
+    final userData = userSnap.data!.data() as Map<String, dynamic>;
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.currentUserId)
+          .collection('contacts')
+          .doc(widget.userId)
+          .snapshots(),
+      builder: (context, contactSnap) {
+        String displayName = userData['name'] ?? widget.userName;
+
+        if (contactSnap.hasData && contactSnap.data!.exists) {
+          final contactData =
+              contactSnap.data!.data() as Map<String, dynamic>;
+          displayName =
+              contactData['customName'] ?? displayName;
+        }
+
+        return Text(
+          displayName,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        );
+      },
     );
   },
 ),
+ 
                 Text(
                   titleStatus,
                   style: TextStyle(fontSize: 12, color:  Theme.of(context).textTheme.bodySmall?.color,),
@@ -221,7 +237,7 @@ onUnblock: () async {
           ),
         );
       },
-      onDisappearing: _showDisappearingOptions,
+      
       onGallery: _showGalleryPicker,
       onBlock: _confirmBlock,
       onClearChat: _confirmClearChat,
@@ -237,63 +253,10 @@ onUnblock: () async {
   }
 
 
-  void _showDisappearingOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: const Color(0xFF004D40),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-               Text(
-                'Disappearing messages',
-                style: TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color, fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              _buildDisappearingOption('off', 'Off'),
-              _buildDisappearingOption('24h', '24 hours'),
-              _buildDisappearingOption('7d', '7 days'),
-            ],
-          ),
-        );
-      },
-    );
-  }
+ 
+           
 
-  Widget _buildDisappearingOption(String mode, String label) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(label, style:  TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color,)),
-      onTap: () async {
-        final navigator = Navigator.of(context);
-        final messenger = ScaffoldMessenger.of(context);
-        final chatProvider = context.read<ChatProvider>();
-
-        await chatProvider.toggleDisappearingMode(
-          chatId: widget.chatId,
-          mode: mode,
-        );
-        await chatProvider.applyDisappearingPolicy(
-          chatId: widget.chatId,
-          mode: mode,
-        );
-        if (!mounted) return;
-        navigator.pop();
-        messenger.showSnackBar(
-          SnackBar(content: Text('Disappearing messages set to $label')),
-        );
-      },
-    );
-  }
+  
 
   Future<void> _showGalleryPicker() async {
     showModalBottomSheet(
@@ -786,25 +749,7 @@ onUnblock: () async {
           );
         }
 
-        final chatData =
-            chatSnapshot.data!.data() as Map<String, dynamic>? ?? {};
-        final disappearingMode = chatData['disappearingMode'] ?? 'off';
-       final blockedBy = List<String>.from(chatData['blockedBy'] ?? []);
-
-
-      isBlockedByCurrent = blockedBy.contains(widget.currentUserId);
-      isBlockedByOther = blockedBy.contains(widget.userId);
-
-        if (disappearingMode != 'off' &&
-            disappearingMode != _lastAppliedDisappearingMode) {
-          _lastAppliedDisappearingMode = disappearingMode;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<ChatProvider>().applyDisappearingPolicy(
-              chatId: widget.chatId,
-              mode: disappearingMode,
-            );
-          });
-        }
+        
 
         return StreamBuilder<QuerySnapshot>(
           stream: typingStream,
@@ -911,8 +856,7 @@ onUnblock: () async {
                               isPinned: data['isPinned'] ?? false,
                               isStarred: data['isStarred'] ?? false,
                               replyText: data['replyText']?.toString(),
-                              bubbleStyle:
-                                  chatData['bubbleStyle'] ?? 'gradient',
+                             
                               highlightQuery: _searchQuery,
                               image: data['image']?.toString(),
                               onSwipeReply: () {

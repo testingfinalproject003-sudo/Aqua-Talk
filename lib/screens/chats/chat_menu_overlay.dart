@@ -11,7 +11,7 @@ class ChatMenuOverlay {
     required VoidCallback onViewContact,
     required VoidCallback onSearch,
     required VoidCallback onMedia,
-    required VoidCallback onDisappearing,
+    
     required VoidCallback onGallery,
     required VoidCallback onBlock,
     required VoidCallback onUnblock,
@@ -44,7 +44,7 @@ class ChatMenuOverlay {
                       _item(context, Icons.person, "View Contact", onViewContact),
                       _item(context, Icons.search, "Search Chat", onSearch),
                       _item(context, Icons.perm_media, "Media / Links", onMedia),
-                      _item(context, Icons.timer, "Disappearing Msg", onDisappearing),
+                      
                       _item(context, Icons.image, "Gallery", onGallery),
 
                       const Divider(color: Colors.white30),

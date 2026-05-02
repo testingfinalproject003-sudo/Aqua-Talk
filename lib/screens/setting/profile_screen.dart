@@ -164,8 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: cardColor,
                   child: Column(
                     children: [
-                      _buildActionTile(Icons.timer_outlined, 'Disappearing Messages', 'Off', () {}),
-                      Divider(height: 1, color: const Color(0xFF80CBC4).withValues(alpha: 0.2), indent: 55),
+                     
                       _buildActionTile(Icons.lock_outline_rounded, 'End-to-end Encryption', 'Verified', () {}),
                       Divider(height: 1, color: const Color(0xFF80CBC4).withValues(alpha: 0.2), indent: 55),
                       _buildActionTile(Icons.security_outlined, 'Two-step Verification', 'Enabled', () {}),

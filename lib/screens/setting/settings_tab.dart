@@ -9,8 +9,7 @@ import 'package:aqua_talk/provider/theme_provider.dart';
 import 'package:aqua_talk/services/user_service.dart';
 
 import 'package:aqua_talk/screens/setting/profile_screen.dart';
-import 'package:aqua_talk/screens/setting/account_screen.dart';
-import 'package:aqua_talk/screens/setting/privacy_screen.dart';
+
 import 'package:aqua_talk/screens/setting/favorite_screen.dart';
 import 'package:aqua_talk/screens/login/login_screen.dart';
 
@@ -63,7 +62,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
       // ================= APPBAR =================
       appBar: AppBar(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
 
         title: _isSearching
@@ -106,26 +105,7 @@ class _SettingsTabState extends State<SettingsTab> {
             _buildProfileHeader(context),
           ]),
 
-          const SizedBox(height: 20),
-
-          _buildSectionTitle("Account & Security", context),
-          _buildGlassGroup(context, [
-            _buildSettingsTile(
-              Icons.key_rounded,
-              "Account",
-              "Security, change number",
-              () => _openScreen(const AccountScreen()),
-              context,
-            ),
-            _buildDivider(context),
-            _buildSettingsTile(
-              Icons.lock_rounded,
-              "Privacy",
-              "Last seen, profile photo",
-              () => _openScreen(const PrivacyScreen()),
-              context,
-            ),
-          ]),
+         
 
           _buildSectionTitle("Personalization", context),
 
@@ -144,9 +124,10 @@ class _SettingsTabState extends State<SettingsTab> {
   },
   context,
 ),
+            _buildDivider(context),
             _buildThemeSwitch(context),
             _buildDivider(context),
-            _buildDivider(context),
+           
             _buildSettingsTile(
               Icons.favorite_rounded,
               "Favorite Contacts",
@@ -353,10 +334,13 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
+  
+
   Widget _buildFooterBranding(BuildContext context) {
-    final theme = context.watch<ThemeProvider>();
+    // final theme = context.watch<ThemeProvider>();
 
     return Column(
+      
       children: [
         Text("from",
             style: TextStyle(
@@ -370,7 +354,7 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Widget _buildSectionTitle(String title, BuildContext context) {
-    final theme = context.watch<ThemeProvider>();
+    // final theme = context.watch<ThemeProvider>();
 
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 10),

@@ -32,6 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
     final currentUser = FirebaseAuth.instance.currentUser;
 
+    // STEP 1: Never seen onboarding → show it first
     if (!seenOnboarding) {
       navigator.pushReplacement(
         MaterialPageRoute(builder: (_) => const OnboardingScreen()),
@@ -39,6 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
+    // STEP 2: Not logged in → go to Login (OTP happens inside LoginScreen)
     if (currentUser == null) {
       navigator.pushReplacement(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -46,14 +48,16 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
+    // STEP 3: Logged in → check if profile is complete
     try {
       await UserService().createOrUpdateUser(currentUser);
       final userDoc = await UserService().getUserOnce(currentUser.uid);
       final data = userDoc.data() ?? <String, dynamic>{};
-      final name = (data['name'] ?? '').toString();
-      final about = (data['about'] ?? '').toString();
+      final name = (data['name'] ?? '').toString().trim();
+      final about = (data['about'] ?? '').toString().trim();
 
       if (name.isEmpty || about.isEmpty) {
+        // Profile incomplete → Profile Setup
         navigator.pushReplacement(
           MaterialPageRoute(
             builder: (_) => ProfileSetupScreen(
@@ -63,6 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         );
       } else {
+        // All good → Home
         navigator.pushReplacement(
           MaterialPageRoute(builder: (_) => const AquaHomeScreen()),
         );
