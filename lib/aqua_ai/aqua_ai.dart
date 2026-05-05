@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+
+
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class AiChatScreen extends StatefulWidget {
@@ -16,9 +18,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
   bool _isLoading = false;
 
   // ====== OPENROUTER CONFIG ======
-  static const String _apiKey = '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';
-  static const String _model = 'google/gemma-3-12b-it:free';
-  static const String _apiUrl = 'https://openrouter.ai/v1/chat/completions';
+  
+  static const String _apiKey = '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';
+  static const String _model = 'openai/gpt-4o-mini';
+  static const String _apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
@@ -37,7 +40,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       final apiMessages = [
         {
           'role': 'system',
-          'content': 'You are a helpful assistant inside a chat app. Be concise and friendly.',
+          'content': 'You are a helpful assistant inside AquaTalk chat app. Be concise and friendly.',
         },
         ..._messages.map((m) => {
               'role': m['role']!,
@@ -50,7 +53,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_apiKey',
-          'X-Title': 'Aqua Chat',
+          'X-Title': 'AquaTalk AI',
         },
         body: jsonEncode({
           'model': _model,
@@ -80,7 +83,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': 'Connection failed. Check your internet.',
+          'content': 'Connection failed. Please check your internet connection.',
         });
       });
     }
@@ -127,7 +130,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text('Aqua AI', style: TextStyle(fontSize: 16)),
-                Text('Chat with your Aqua assistant',
+                Text('Chat with your AI assistant',
                     style: TextStyle(fontSize: 12, color: Colors.white70)),
               ],
             ),
@@ -142,8 +145,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.auto_awesome,
-                            size: 52, color: primary),
+                        Icon(Icons.auto_awesome, size: 52, color: primary),
                         const SizedBox(height: 12),
                         Text('Ask me anything!',
                             style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
@@ -165,14 +167,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
           // Typing indicator
           if (_isLoading)
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 14,
-                    backgroundColor: Colors.deepPurple,
-                    child: Icon(Icons.auto_awesome,
+                    backgroundColor: primary,
+                    child: const Icon(Icons.auto_awesome,
                         color: Colors.white, size: 14),
                   ),
                   const SizedBox(width: 8),
@@ -185,12 +186,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
           // Input
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              border:
-                  Border(top: BorderSide(color: Colors.grey.shade200)),
+              border: Border(top: BorderSide(color: Colors.grey.shade200)),
             ),
             child: Row(
               children: [
@@ -216,7 +215,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: primary,
                   child: IconButton(
                     icon: const Icon(Icons.send,
                         color: Colors.white, size: 18),

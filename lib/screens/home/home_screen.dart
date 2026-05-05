@@ -296,7 +296,9 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
             padding: const EdgeInsets.only(bottom: 70), // push above main FAB
             child: FloatingActionButton(
               heroTag: 'ai_chat',
-              backgroundColor:  Colors.orangeAccent,
+              backgroundColor: theme.isDark
+                  ? const Color(0xFF80CBC4)
+                  : darkTeal,
               mini: true, // smaller size so it doesn't overpower
               onPressed: () {
                 Navigator.push(
