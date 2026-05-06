@@ -253,10 +253,6 @@ onUnblock: () async {
   }
 
 
- 
-           
-
-  
 
   Future<void> _showGalleryPicker() async {
     showModalBottomSheet(
@@ -743,9 +739,17 @@ onUnblock: () async {
     return StreamBuilder<DocumentSnapshot>(
       stream: chatStream,
       builder: (context, chatSnapshot) {
-        if (!chatSnapshot.hasData) {
-          return const Scaffold(
+        if (chatSnapshot.connectionState == ConnectionState.waiting) {
+          return  Scaffold(
+            appBar: AppBar(title: Text('Loading...')),
             body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+          if (chatSnapshot.hasError) {
+          return  Scaffold(
+            appBar: AppBar(title: Text('Error')),
+            body: Center(child: Text(chatSnapshot.error.toString()))
           );
         }
 
