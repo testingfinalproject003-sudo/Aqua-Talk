@@ -163,12 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildGlassContainer(
                   color: cardColor,
                   child: Column(
-                    children: [
-                     
-                      _buildActionTile(Icons.lock_outline_rounded, 'End-to-end Encryption', 'Verified', () {}),
-                      Divider(height: 1, color: const Color(0xFF80CBC4).withValues(alpha: 0.2), indent: 55),
-                      _buildActionTile(Icons.security_outlined, 'Two-step Verification', 'Enabled', () {}),
-                    ],
+                    
                   ),
                 ),
                 const SizedBox(height: 50),
@@ -260,19 +255,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildActionTile(IconData icon, String title, String trailing, VoidCallback onTap) {
-    return ListTile(
-      onTap: onTap,
-      leading: Icon(icon, color: const Color(0xFF80CBC4)),
-      title: Text(title, style: TextStyle(color:  Theme.of(context).textTheme.bodySmall?.color, fontWeight: FontWeight.w600, fontSize: 14)),
-      trailing: Wrap(
-        spacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(trailing, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12)),
-          const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
-        ],
-      ),
-    );
-  }
+  
 }

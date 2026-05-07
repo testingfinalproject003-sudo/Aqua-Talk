@@ -202,7 +202,7 @@ class _InputBarState extends State<InputBar> {
                 IconButton(
                   icon: Icon(
                     showEmoji ? Icons.keyboard : Icons.emoji_emotions,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
+                    color: Colors.white,
                   ),
                   onPressed: () {
                     if (showEmoji) {
@@ -217,10 +217,10 @@ class _InputBarState extends State<InputBar> {
                   child: TextField(
                     focusNode: focusNode,
                     controller: controller,
-                    style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+                    style:  TextStyle(color: Colors.white),
                     decoration:  InputDecoration(
                       hintText: "Message",
-                      hintStyle: TextStyle(color:Theme.of(context).textTheme.bodySmall?.color,),
+                      hintStyle: TextStyle(color:Colors.white),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 12,

@@ -55,24 +55,18 @@ Future<void> sendImageMessage({
   // ================== MARK AS READ ==================
   Future<void> markAsRead(String chatId) async {
     try {
-      final chatRef = _firestore.collection('chats').doc(chatId);
-      final chatDoc = await chatRef.get();
-      final chatData = chatDoc.data() ?? {};
-      final unreadCount = chatData['unreadCount'];
-
-      if (unreadCount is Map) {
-        final uid = _uid;
-        if (uid != null) {
-          await chatRef.update({"unreadCount.$uid": 0});
-        }
-      } else {
-        await chatRef.update({"unreadCount": 0});
-      }
-
       final uid = _uid;
-      if (uid != null) {
-        await markMessagesSeen(chatId: chatId, uid: uid);
-      }
+      if (uid == null) return;
+
+      final chatRef = _firestore.collection('chats').doc(chatId);
+
+      // ✅ CURRENT USER KA UNREAD 0 KARO
+      await chatRef.update({
+        'unreadCount.$uid': 0,
+      });
+
+      // Messages ko seen mark karo
+      await markMessagesSeen(chatId: chatId, uid: uid);
     } catch (e) {
       debugPrint("markAsRead error: $e");
     }
@@ -215,6 +209,7 @@ Future<void> sendImageMessage({
             text: text,
             isSilent: isSilent,
           );
+          // ✅ Only receiver ka unread increment karo
           await _updateChatMetadata(
             chatId: chatId,
             text: text,
@@ -225,6 +220,7 @@ Future<void> sendImageMessage({
       });
     } else {
       await _chatService.sendMessage(chatId: chatId, message: message);
+      // ✅ Only receiver ka unread increment karo
       await _updateChatMetadata(
         chatId: chatId,
         text: text,
@@ -236,18 +232,9 @@ Future<void> sendImageMessage({
     return messageId;
   }
 
-  // ================== STAR MESSAGE ==================
-  Future<void> toggleStarMessage({
-    required String chatId,
-    required String messageId,
-    required bool isStarred,
-  }) async {
-    await _chatService.starMessage(
-      chatId: chatId,
-      messageId: messageId,
-      isStarred: isStarred,
-    );
-  }
+  
+  
+ 
 
   // ================== PIN MESSAGE ==================
   Future<void> togglePinMessage({

@@ -1,8 +1,8 @@
-
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
+import 'package:hive_flutter/hive_flutter.dart';
 
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
@@ -13,183 +13,399 @@ class AiChatScreen extends StatefulWidget {
 
 class _AiChatScreenState extends State<AiChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  final List<Map<String, String>> _messages = [];
-  bool _isLoading = false;
+  final ScrollController scrollController = ScrollController();
 
-  // ====== OPENROUTER CONFIG ======
-  
-  static const String _apiKey = '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';
-  static const String _model = 'openai/gpt-4o-mini';
-  static const String _apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+  List<Map<String, String>> messages = [];
 
-  Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty || _isLoading) return;
+  late Box chatBox;
+
+  final String apiKey = "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";
+
+  static const String _systemPrompt = '''
+You are Aqua AI, a helpful and friendly assistant.
+Reply clearly and use markdown formatting when needed.
+''';
+
+  // COLORS
+ static const Color _bgColor = Color(0xFFB2DFDB);
+
+static const Color _appBarColor = Color(0xFF004D4D);
+
+static const Color _bubbleUser = Color(0xFF006D6D);
+
+static const Color _bubbleAssistant = Color(0xFF34796E);
+
+static const Color _textAssistant = Color(0xFF123232);
+
+static const Color _sendBtn = Color(0xFF008080);
+
+  @override
+  void initState() {
+    super.initState();
+
+    // ✅ BOX ALREADY OPENED IN main.dart
+    chatBox = Hive.box('chatBox');
+
+    loadMessages();
+  }
+
+  // LOAD MESSAGES
+  void loadMessages() {
+    final data = chatBox.get('messages');
+
+    if (data != null) {
+      messages = List<Map<String, String>>.from(
+        (data as List).map(
+          (e) => Map<String, String>.from(e),
+        ),
+      );
+    }
+
+    setState(() {});
+  }
+
+  // SAVE
+  void saveMessages() {
+    chatBox.put('messages', messages);
+  }
+
+  // SEND MESSAGE
+  Future<void> sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
 
     setState(() {
-      _messages.add({'role': 'user', 'content': text});
-      _isLoading = true;
+      messages.add({
+        "role": "user",
+        "content": text,
+      });
     });
 
+    saveMessages();
+
     _controller.clear();
-    _scrollToBottom();
+
+    scrollToBottom();
 
     try {
-      // Build messages list for API
-      final apiMessages = [
-        {
-          'role': 'system',
-          'content': 'You are a helpful assistant inside AquaTalk chat app. Be concise and friendly.',
-        },
-        ..._messages.map((m) => {
-              'role': m['role']!,
-              'content': m['content']!,
-            }),
-      ];
-
       final response = await http.post(
-        Uri.parse(_apiUrl),
+        Uri.parse(
+          "https://openrouter.ai/api/v1/chat/completions",
+        ),
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_apiKey',
-          'X-Title': 'AquaTalk AI',
+          "Authorization": "Bearer $apiKey",
+          "Content-Type": "application/json",
         },
         body: jsonEncode({
-          'model': _model,
-          'messages': apiMessages,
-          'max_tokens': 500,
-          'temperature': 0.7,
+          "model": "openai/gpt-4o-mini",
+          "messages": [
+            {
+              "role": "system",
+              "content": _systemPrompt,
+            },
+            ...messages,
+          ],
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final reply = data['choices'][0]['message']['content'] as String;
+
+        final reply =
+            data["choices"][0]["message"]["content"] ??
+            "No response";
 
         setState(() {
-          _messages.add({'role': 'assistant', 'content': reply.trim()});
+          messages.add({
+            "role": "assistant",
+            "content": reply.toString(),
+          });
         });
       } else {
-        final err = jsonDecode(response.body);
         setState(() {
-          _messages.add({
-            'role': 'assistant',
-            'content': 'Error: ${err['error']['message'] ?? response.statusCode}',
+          messages.add({
+            "role": "assistant",
+            "content":
+                "Error: ${response.statusCode}",
           });
         });
       }
     } catch (e) {
       setState(() {
-        _messages.add({
-          'role': 'assistant',
-          'content': 'Connection failed. Please check your internet connection.',
+        messages.add({
+          "role": "assistant",
+          "content":
+              "Connection failed. Check internet.",
         });
       });
     }
 
-    setState(() => _isLoading = false);
-    _scrollToBottom();
+    saveMessages();
+
+    scrollToBottom();
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+  // SCROLL
+  void scrollToBottom() {
+    Future.delayed(
+      const Duration(milliseconds: 300),
+      () {
+        if (scrollController.hasClients) {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      },
+    );
+  }
+
+  // DELETE MESSAGE
+  void showDeleteDialog(int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Message"),
+        content: const Text(
+          "Delete this message?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+
+              setState(() {
+                messages.removeAt(index);
+              });
+
+              saveMessages();
+
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+                const SnackBar(
+                  content:
+                      Text("Message deleted"),
+                ),
+              );
+            },
+            child: const Text(
+              "Delete",
+              style:
+                  TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // CLEAR CHAT
+  void clearChat() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Clear Chat"),
+        content: const Text(
+          "Delete all messages?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+
+              setState(() {
+                messages.clear();
+              });
+
+              chatBox.delete('messages');
+
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+                const SnackBar(
+                  content:
+                      Text("Chat cleared"),
+                ),
+              );
+            },
+            child: const Text(
+              "Clear",
+              style:
+                  TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // EMPTY STATE
+  Widget buildEmptyState() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color:
+              Colors.white.withValues(alpha: 0.15),
+          borderRadius:
+              BorderRadius.circular(20),
+          border:
+              Border.all(color: Colors.white24),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.auto_awesome,
+              size: 60,
+              color: _appBarColor,
+            ),
+            SizedBox(height: 12),
+            Text(
+              "Aqua AI",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: _appBarColor,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Your personal AI assistant",
+              style: TextStyle(
+                color: _sendBtn,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // MESSAGE BUBBLE
+  Widget buildMessageBubble(
+    Map<String, String> msg,
+    int index,
+  ) {
+    bool isUser = msg["role"] == "user";
+
+    return GestureDetector(
+      onLongPress: () =>
+          showDeleteDialog(index),
+      child: Align(
+        alignment: isUser
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
+        child: Container(
+          margin: const EdgeInsets.symmetric(
+            vertical: 5,
+            horizontal: 10,
+          ),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isUser
+                ? _bubbleUser.withValues(
+                    alpha: 0.9,
+                  )
+                : _bubbleAssistant.withValues(
+                    alpha: 0.15,
+                  ),
+            borderRadius:
+                BorderRadius.circular(14),
+          ),
+          child: MarkdownBody(
+            data: msg["content"] ?? "",
+            styleSheet: MarkdownStyleSheet(
+              p: TextStyle(
+                color: isUser
+                    ? Colors.white
+                    : _textAssistant,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    _scrollController.dispose();
+    scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return Scaffold(
+      backgroundColor: _bgColor,
       appBar: AppBar(
-        backgroundColor: primary,
-        title: Row(
+        backgroundColor: _appBarColor,
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.auto_awesome, color: primary, size: 16),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('Aqua AI', style: TextStyle(fontSize: 16)),
-                Text('Chat with your AI assistant',
-                    style: TextStyle(fontSize: 12, color: Colors.white70)),
-              ],
-            ),
+            Icon(Icons.water_drop),
+            SizedBox(width: 8),
+            Text("Aqua AI"),
           ],
         ),
+        actions: [
+          IconButton(
+            onPressed:
+                messages.isEmpty
+                    ? null
+                    : clearChat,
+            icon: const Icon(
+              Icons.delete_outline,
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: _messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.auto_awesome, size: 52, color: primary),
-                        const SizedBox(height: 12),
-                        Text('Ask me anything!',
-                            style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
-                      ],
-                    ),
-                  )
+            child: messages.isEmpty
+                ? buildEmptyState()
                 : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _messages.length,
-                    itemBuilder: (_, i) {
-                      final msg = _messages[i];
-                      final isUser = msg['role'] == 'user';
-                      return _buildBubble(msg['content']!, isUser);
+                    controller:
+                        scrollController,
+                    itemCount:
+                        messages.length,
+                    padding:
+                        const EdgeInsets.symmetric(
+                      vertical: 8,
+                    ),
+                    itemBuilder: (_, index) {
+                      return buildMessageBubble(
+                        messages[index],
+                        index,
+                      );
                     },
                   ),
           ),
-
-          // Typing indicator
-          if (_isLoading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: primary,
-                    child: const Icon(Icons.auto_awesome,
-                        color: Colors.white, size: 14),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Thinking...',
-                      style: TextStyle(
-                          fontSize: 13, color: Colors.grey.shade500)),
-                ],
-              ),
-            ),
-
-          // Input
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              color: Colors.white.withValues(
+                alpha: 0.2,
+              ),
             ),
             child: Row(
               children: [
@@ -198,71 +414,54 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     controller: _controller,
                     minLines: 1,
                     maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
-                    decoration: InputDecoration(
-                      hintText: 'Ask me anything...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
+                    textInputAction:
+                        TextInputAction.send,
+                    onSubmitted: (_) {
+                      sendMessage(
+                        _controller.text,
+                      );
+                    },
+                    decoration:
+                        InputDecoration(
+                      hintText:
+                          "Ask anything...",
+                      border:
+                          OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(
+                          24,
+                        ),
+                        borderSide:
+                            BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey.shade100,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                      fillColor: Colors.white
+                          .withValues(
+                        alpha: 0.3,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: primary,
+                  backgroundColor:
+                      _sendBtn,
                   child: IconButton(
-                    icon: const Icon(Icons.send,
-                        color: Colors.white, size: 18),
-                    onPressed: _sendMessage,
+                    icon: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      sendMessage(
+                        _controller.text,
+                      );
+                    },
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBubble(String text, bool isUser) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
-        ),
-        decoration: BoxDecoration(
-          color: isUser ? primary : Colors.grey.shade200,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isUser ? 18 : 6),
-            bottomRight: Radius.circular(isUser ? 6 : 18),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color.fromRGBO(0, 0, 0, 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
-            fontSize: 14,
-          ),
-        ),
       ),
     );
   }

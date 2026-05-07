@@ -56,8 +56,6 @@ class ChatTile extends StatelessWidget {
     );
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     final provider = context.read<ChatProvider>();
@@ -92,6 +90,7 @@ class ChatTile extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           final data = snapshot.data?.data() as Map<String, dynamic>?;
+          // ✅ OTHER USER KI PROFILE PIC
           final imageUrl = data?['profilePic'] as String?;
 
           return FutureBuilder<DocumentSnapshot>(
@@ -113,12 +112,34 @@ class ChatTile extends StatelessWidget {
               }
 
               return GestureDetector(
-                onTap: () {
+                onTap: () async {
                   if (selection.isSelecting) {
                     selection.toggleSelection(chat.id);
                     return;
                   }
+
+                  // ✅ MARK AS READ: ChatModel ka markAsRead call karo
+                  
+                  if (chat.unread > 0){
+  Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: darkTeal,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      chat.unread > 99 ? '99+' : chat.unread.toString(),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
+                  }
+ if (!context.mounted) return;
                   Navigator.push(
+                    
                     context,
                     MaterialPageRoute(
                       builder: (_) => ChatScreen(
@@ -126,6 +147,7 @@ class ChatTile extends StatelessWidget {
                         currentUserId: myId,
                         userId: otherUserId,
                         userName: displayName,
+                        // ✅ PROFILE PIC: other user ki
                         userImage: imageUrl ?? chat.avatar,
                         isOnline: chat.isOnline,
                       ),
@@ -171,25 +193,48 @@ class ChatTile extends StatelessWidget {
                           ),
                         ),
 
-                      // Avatar
+                      // ✅ AVATAR: Other user ki profile pic
                       GestureDetector(
                         onTap: () => _showUserDpDialog(
                             context, imageUrl, displayName),
-                        child: CircleAvatar(
-                          radius: 24,
-                          backgroundImage:
-                              (imageUrl != null && imageUrl.isNotEmpty)
-                                  ? NetworkImage(imageUrl)
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.grey.shade300,
+                              backgroundImage:
+                                  (imageUrl != null && imageUrl.isNotEmpty)
+                                      ? NetworkImage(imageUrl)
+                                      : null,
+                              child: (imageUrl == null || imageUrl.isEmpty)
+                                  ? const Icon(Icons.person, color: Colors.white)
                                   : null,
-                          child: (imageUrl == null || imageUrl.isEmpty)
-                              ? const Icon(Icons.person, color: Colors.white)
-                              : null,
+                            ),
+                            // Online indicator
+                            if (chat.isOnline)
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
 
                       const SizedBox(width: 10),
 
-                      // Name + message
+                      // ✅ NAME + MESSAGE (Expanded)
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,9 +248,12 @@ class ChatTile extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     displayName,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                      // ✅ UNREAD: Bold if unread > 0
+                                      fontWeight: (chat.unread > 0 || chat.unreadCount > 0)
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
                                       color: darkTeal,
                                     ),
                                     overflow: TextOverflow.ellipsis,
@@ -219,43 +267,58 @@ class ChatTile extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: darkTeal.withValues(alpha: 0.7),
+                                // ✅ UNREAD: Bold message if unread
+                                fontWeight: (chat.unread > 0 || chat.unreadCount > 0)
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: (chat.unread > 0 || chat.unreadCount > 0)
+                                    ? darkTeal
+                                    : darkTeal.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                      // Time + unread + popup
+                      // ✅ RIGHT SIDE: Time + Unread Badge
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                "${chat.time.hour.toString().padLeft(2, '0')}:${chat.time.minute.toString().padLeft(2, '0')}",
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF004D40),
-                                ),
-                              ),
-                            
-                               
-                            ],
+                          // Time
+                          Text(
+                            "${chat.time.hour.toString().padLeft(2, '0')}:${chat.time.minute.toString().padLeft(2, '0')}",
+                            style: TextStyle(
+                              fontSize: 12,
+                              // ✅ UNREAD: Bold time if unread
+                              fontWeight: (chat.unread > 0 || chat.unreadCount > 0)
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: (chat.unread > 0 || chat.unreadCount > 0)
+                                  ? darkTeal
+                                  : darkTeal.withValues(alpha: 0.5),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          if (chat.unread > 0)
+                          const SizedBox(height: 4),
+                          // ✅ UNREAD BADGE: unread ya unreadCount dono check
+                          if (chat.unread > 0 || chat.unreadCount > 0)
                             Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
                                 color: darkTeal,
-                                shape: BoxShape.circle,
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                chat.unread.toString(),
+                                chat.unread > 0
+                                    ? (chat.unread > 99 ? '99+' : chat.unread.toString())
+                                    : (chat.unreadCount > 99 ? '99+' : chat.unreadCount.toString()),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 10,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),

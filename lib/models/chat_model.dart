@@ -54,44 +54,41 @@ class ChatModel {
   });
 
   factory ChatModel.fromMap(Map<String, dynamic> map, String id) {
+    final myId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final participants = List<String>.from(map['participants'] ?? []);
+    final otherId = participants.firstWhere(
+      (id) => id != myId,
+      orElse: () => '',
+    );
+
+    // ✅ UNREAD COUNT: Sirf current user ka
+    final unreadData = map['unreadCount'] ?? {};
+    int myUnread = 0;
+    if (unreadData is Map) {
+      myUnread = unreadData[myId] ?? 0;
+    }
+
     return ChatModel(
       id: id,
-      userId: map['userId'] ?? '',
-      name: map['name'] ?? 'User',
+      userId: otherId,
+      name: map['names']?[otherId] ?? 'User',
       message: map['lastMessage'] ?? '',
       time: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      unread: map['unread'] ?? 0,
-      avatar: map['avatar'] ?? '',
-      isOnline: map['isOnline'] ?? false,
-      isPinned: map['isPinned'] ?? false,
-      unreadCount: _parseUnreadCount(map['unreadCount']),
+      unread: myUnread, // ✅ Sirf mera unread
+      avatar: map['avatars']?[otherId] ?? '',
+      isOnline: map['online_$otherId'] ?? false,
+      isPinned: map['pinned_$myId'] ?? false,
+      unreadCount: myUnread,
       isFavorite: map['isFavorite'] ?? false,
-      // isGroup: map['isGroup'] ?? false,
       isArchived: map['isArchived'] ?? false,
       chatTheme: map['chatTheme'] ?? 'default',
       bubbleStyle: map['bubbleStyle'] ?? 'default',
       hideLastSeen: map['hideLastSeen'] ?? false,
       readReceiptEnabled: map['readReceiptEnabled'] ?? true,
       chatLocked: map['chatLocked'] ?? false,
-     
       toggleFavorite: () {},
       markAsRead: () {},
-      participants: map['participants'] is List ? List<String>.from(map['participants']) : const [],
+      participants: participants,
     );
-  }
-
-  static int _parseUnreadCount(dynamic raw) {
-    if (raw is int) return raw;
-    if (raw is Map) {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null && raw[uid] is int) {
-        return raw[uid] as int;
-      }
-      return raw.values.whereType<int>().fold(
-        0,
-        (prev, element) => prev + element,
-      );
-    }
-    return 0;
   }
 }

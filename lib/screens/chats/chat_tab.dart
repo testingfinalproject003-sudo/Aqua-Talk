@@ -42,17 +42,8 @@ class _ChatTabState extends State<ChatTab> {
                 style: const TextStyle(color: Colors.white),
               ),
               actions: [
-                // PIN
-                IconButton(
-                  tooltip: 'Pin',
-                  icon: const Icon(Icons.push_pin_outlined),
-                  onPressed: () async {
-                    for (var id in selection.selectedMessages) {
-                      await provider.togglePin(id, false);
-                    }
-                    selection.clearSelection();
-                  },
-                ),
+               
+               
 
                 // DELETE
                 IconButton(
@@ -88,47 +79,19 @@ class _ChatTabState extends State<ChatTab> {
                   },
                 ),
 
-                // MUTE / NOTIFICATION
-                IconButton(
-                  tooltip: 'Mute notifications',
-                  icon: const Icon(Icons.notifications_off_outlined),
-                  onPressed: () {
-                    selection.clearSelection();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Notifications muted')),
-                    );
-                  },
-                ),
 
                 // POPUP MENU
                 PopupMenuButton<String>(
   icon: const Icon(Icons.more_vert, color: Colors.white),
   onSelected: (value) async {
     switch (value) {
-      case 'add_contact':
-        selection.clearSelection();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add to Contact tapped')),
-        );
-        break;
-      case 'view_contact':
-        selection.clearSelection();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('View Contact tapped')),
-        );
-        break;
-      case 'mark_unread':
-        for (var id in selection.selectedMessages) {
-          await provider.markAsUnread(id);
-        }
-        selection.clearSelection();
-        break;
-      case 'select_all':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Select All tapped')),
-        );
-        break;
+      
+       
+     
+       
+        
+     
+      
       case 'favourite':
         for (var id in selection.selectedMessages) {
           await provider.toggleFavorite(id, false);
@@ -150,46 +113,8 @@ class _ChatTabState extends State<ChatTab> {
     }
   },
   itemBuilder: (_) => [
-    const PopupMenuItem(
-      value: 'add_contact',
-      child: Row(
-        children: [
-          Icon(Icons.person_add_outlined, color: Color(0xFF004D40)),
-          SizedBox(width: 12),
-          Text('Add to Contact'),
-        ],
-      ),
-    ),
-    const PopupMenuItem(
-      value: 'view_contact',
-      child: Row(
-        children: [
-          Icon(Icons.person_outline, color: Color(0xFF004D40)),
-          SizedBox(width: 12),
-          Text('View Contact'),
-        ],
-      ),
-    ),
-    const PopupMenuItem(
-      value: 'mark_unread',
-      child: Row(
-        children: [
-          Icon(Icons.mark_chat_unread_outlined, color: Color(0xFF004D40)),
-          SizedBox(width: 12),
-          Text('Mark as Unread'),
-        ],
-      ),
-    ),
-    const PopupMenuItem(
-      value: 'select_all',
-      child: Row(
-        children: [
-          Icon(Icons.select_all, color: Color(0xFF004D40)),
-          SizedBox(width: 12),
-          Text('Select All'),
-        ],
-      ),
-    ),
+    
+    
     const PopupMenuItem(
       value: 'favourite',
       child: Row(
@@ -306,11 +231,14 @@ class _ChatTabState extends State<ChatTab> {
 
                   List<ChatModel> chats = snapshot.data!;
 
-                  chats.sort((a, b) {
-                    if (a.isPinned && !b.isPinned) return -1;
-                    if (!a.isPinned && b.isPinned) return 1;
-                    return b.time.compareTo(a.time);
-                  });
+                  // Sorting: Latest message top pe
+chats.sort((a, b) {
+  if (a.isPinned && !b.isPinned) return -1;
+  if (!a.isPinned && b.isPinned) return 1;
+  return b.time.compareTo(a.time); // ✅ Latest first
+});
+
+
 
                   final filteredChats = chats.where((c) {
                     final matchesSearch = c.name

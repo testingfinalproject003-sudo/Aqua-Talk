@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../provider/chat_selection_provider.dart';
 
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends StatefulWidget {
   final String text;
   final bool isMe;
   final String time;
@@ -21,6 +21,7 @@ class MessageBubble extends StatelessWidget {
   final String bubbleStyle;
   final String? highlightQuery;
   final String? image;
+  final String? videoUrl;
   final VoidCallback? onLongPressAction;
   final void Function(String emoji)? onReact;
   final VoidCallback? onSwipeReply;
@@ -44,124 +45,102 @@ class MessageBubble extends StatelessWidget {
     this.bubbleStyle = 'default',
     this.highlightQuery,
     this.image,
+    this.videoUrl,
     this.onLongPressAction,
     this.onReact,
     this.onSwipeReply,
     this.onDoubleTap,
   });
 
-  List<TextSpan> _buildHighlightedText(
-    String value,
-    String query,
-    TextStyle style,
-  ) {
-    final pattern = RegExp(RegExp.escape(query), caseSensitive: false);
-    final spans = <TextSpan>[];
-    int startIndex = 0;
+  @override
+  State<MessageBubble> createState() => _MessageBubbleState();
+}
 
-    for (final match in pattern.allMatches(value)) {
-      if (match.start > startIndex) {
-        spans.add(TextSpan(
-          text: value.substring(startIndex, match.start),
-          style: style,
-        ));
-      }
-
-      spans.add(TextSpan(
-        text: value.substring(match.start, match.end),
-        style: style.copyWith(
-          backgroundColor: const Color.fromRGBO(255, 255, 0, 0.4),
-        ),
-      ));
-
-      startIndex = match.end;
-    }
-
-    if (startIndex < value.length) {
-      spans.add(TextSpan(
-        text: value.substring(startIndex),
-        style: style,
-      ));
-    }
-
-    return spans;
-  }
-
-  Widget _buildTextWidget() {
-    if (highlightQuery != null &&
-        highlightQuery!.isNotEmpty &&
-        text.toLowerCase().contains(highlightQuery!.toLowerCase())) {
-      return RichText(
-        text: TextSpan(
-          children: _buildHighlightedText(
-            text,
-            highlightQuery!,
-            TextStyle(color: isMe ? Colors.white : Colors.black),
-          ),
-        ),
-      );
-    }
-
-    return Text(
-      text,
-      style: TextStyle(color: isMe ? Colors.white : Colors.black),
-    );
-  }
-
+class _MessageBubbleState extends State<MessageBubble> {
   @override
   Widget build(BuildContext context) {
     final selection = context.watch<ChatSelectionProvider>();
-    final isSelected = selection.selectedMessages.contains(messageId);
-    final hasImage = image != null && image!.isNotEmpty;
-    final isVideo = hasImage && image!.toLowerCase().endsWith('.mp4');
+
+    final isSelected =
+        selection.selectedMessages.contains(widget.messageId);
+
+    final hasImage =
+        widget.image != null && widget.image!.isNotEmpty;
+
+    final hasVideo =
+        widget.videoUrl != null &&
+        widget.videoUrl!.isNotEmpty;
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
         if (details.primaryVelocity != null &&
             details.primaryVelocity! > 300) {
-          onSwipeReply?.call();
+          widget.onSwipeReply?.call();
         }
       },
-      onDoubleTap: onDoubleTap,
-      onLongPress: () {
-        if (selection.isSelecting) {
-          context.read<ChatSelectionProvider>().toggleSelection(messageId);
-          return;
-        }
 
-        context.read<ChatSelectionProvider>().toggleSelection(messageId);
-        onLongPressAction?.call();
+      onDoubleTap: widget.onDoubleTap,
+
+      onLongPress: () {
+        context
+            .read<ChatSelectionProvider>()
+            .toggleSelection(widget.messageId);
+
+        widget.onLongPressAction?.call();
       },
+
       onTap: () {
         if (selection.isSelecting) {
-          context.read<ChatSelectionProvider>().toggleSelection(messageId);
+          context
+              .read<ChatSelectionProvider>()
+              .toggleSelection(widget.messageId);
         }
       },
 
       child: Align(
-        alignment:
-            isMe ? Alignment.centerRight : Alignment.centerLeft,
+        alignment: widget.isMe
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
 
         child: Column(
-          crossAxisAlignment: isMe
+          crossAxisAlignment: widget.isMe
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
-          children: [
 
-            // ================= SELECTED EMOJI BAR =================
+          children: [
+            // ================= REACTION BAR =================
             if (isSelected)
               Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6),
+
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: ['👍', '❤️', '😂', '😮', '😢', '🙏']
+
+                  children: [
+                    '👍',
+                    '❤️',
+                    '😂',
+                    '😮',
+                    '😢',
+                    '🙏',
+                  ]
                       .map(
                         (emoji) => GestureDetector(
-                          onTap: () => onReact?.call(emoji),
+                          onTap: () =>
+                              widget.onReact?.call(emoji),
+
                           child: Padding(
-                            padding: const EdgeInsets.all(4),
-                            child: Text(emoji, style: const TextStyle(fontSize: 18)),
+                            padding:
+                                const EdgeInsets.all(4),
+
+                            child: Text(
+                              emoji,
+                              style: const TextStyle(
+                                fontSize: 18,
+                              ),
+                            ),
                           ),
                         ),
                       )
@@ -169,74 +148,260 @@ class MessageBubble extends StatelessWidget {
                 ),
               ),
 
-            // ================= MESSAGE BUBBLE =================
+            // ================= MESSAGE =================
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              margin: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 4,
+              ),
+
               padding: const EdgeInsets.all(10),
+
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.blue.withValues(alpha: 0.2)
-                    : isMe
+                    ? Colors.blue.withValues(alpha: 0.3)
+                    : widget.isMe
                         ? const Color(0xFF004D40)
                         : Colors.grey.shade200,
+
                 borderRadius: BorderRadius.circular(12),
               ),
+
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment:
+                    CrossAxisAlignment.end,
+
                 children: [
+                  // ================= PIN ICON =================
+                  if (widget.isPinned)
+                    const Align(
+                      alignment: Alignment.topLeft,
+
+                      child: Padding(
+                        padding:
+                            EdgeInsets.only(bottom: 4),
+
+                        child: Icon(
+                          Icons.push_pin,
+                          size: 14,
+                          color: Color(0xFF80CBC4),
+                        ),
+                      ),
+                    ),
 
                   // ================= REPLY =================
-                  if (replyText != null && replyText!.isNotEmpty)
+                  if (widget.replyText != null &&
+                      widget.replyText!.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.all(6),
-                      margin: const EdgeInsets.only(bottom: 6),
+
+                      margin:
+                          const EdgeInsets.only(bottom: 6),
+
                       decoration: BoxDecoration(
                         color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8),
+
+                        borderRadius:
+                            BorderRadius.circular(8),
                       ),
+
                       child: Text(
-                        replyText!,
-                        style: const TextStyle(fontSize: 12),
+                        widget.replyText!,
+                        style:
+                            const TextStyle(fontSize: 12),
                       ),
                     ),
 
                   // ================= IMAGE =================
                   if (hasImage)
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: isVideo
-                          ? Container(
-                              padding: const EdgeInsets.all(12),
-                              child: const Text("Video message"),
+                      borderRadius:
+                          BorderRadius.circular(10),
+
+                      child: widget.image!
+                              .startsWith('http')
+                          ? Image.network(
+                              widget.image!,
+                              width: 200,
+                              height: 200,
+                              fit: BoxFit.cover,
                             )
-                          : image!.startsWith('http')
-                              ? Image.network(image!)
-                              : Image.file(File(image!)),
+                          : Image.file(
+                              File(widget.image!),
+                              width: 200,
+                              height: 200,
+                              fit: BoxFit.cover,
+                            ),
                     ),
 
-                  if (hasImage) const SizedBox(height: 8),
+                  // ================= VIDEO =================
+                  if (hasVideo)
+                    GestureDetector(
+                      onTap: () => _playVideo(
+                        context,
+                        widget.videoUrl!,
+                      ),
 
-                  _buildTextWidget(),
+                      child: Container(
+                        width: 200,
+                        height: 200,
 
-                  const SizedBox(height: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
 
+                          borderRadius:
+                              BorderRadius.circular(10),
+                        ),
+
+                        child: Stack(
+                          alignment: Alignment.center,
+
+                          children: [
+                            if (widget.videoUrl!
+                                .startsWith('http'))
+                              Image.network(
+                                widget.videoUrl!,
+                                width: 200,
+                                height: 200,
+                                fit: BoxFit.cover,
+
+                                errorBuilder:
+                                    (_, _, _) =>
+                                        const Icon(
+                                  Icons.videocam,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
+                              )
+                            else
+                              const Icon(
+                                Icons.videocam,
+                                color: Colors.white,
+                                size: 50,
+                              ),
+
+                            const Icon(
+                              Icons.play_circle_fill,
+                              color: Colors.white,
+                              size: 50,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  if (hasImage || hasVideo)
+                    const SizedBox(height: 8),
+
+                  // ================= TEXT =================
                   Text(
-                    time,
+                    widget.text,
+
                     style: TextStyle(
-                      fontSize: 10,
-                      color: isMe ? Colors.white70 : Colors.black45,
+                      color: widget.isMe
+                          ? Colors.white
+                          : Colors.black,
                     ),
                   ),
 
+                  const SizedBox(height: 4),
+
+                  // ================= TIME =================
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+
+                    children: [
+                      if (widget.isEdited)
+                        const Text(
+                          'edited ',
+
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.white54,
+                          ),
+                        ),
+
+                      Text(
+                        widget.time,
+
+                        style: TextStyle(
+                          fontSize: 10,
+
+                          color: widget.isMe
+                              ? Colors.white70
+                              : Colors.black45,
+                        ),
+                      ),
+                    ],
+                  ),
+
                   // ================= REACTIONS =================
-                  if (reactions.isNotEmpty)
-                    Wrap(
-                      spacing: 5,
-                      children: reactions.entries.map((e) {
-                        return Text("${e.key} ${e.value.length}");
-                      }).toList(),
+                  if (widget.reactions.isNotEmpty)
+                    Container(
+                      margin:
+                          const EdgeInsets.only(top: 4),
+
+                      child: Wrap(
+                        spacing: 5,
+
+                        children:
+                            widget.reactions.entries.map((e) {
+                          return Text(
+                            "${e.key} ${e.value.length}",
+                          );
+                        }).toList(),
+                      ),
                     ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= VIDEO PLAYER =================
+
+  void _playVideo(
+    BuildContext context,
+    String videoUrl,
+  ) {
+    showDialog(
+      context: context,
+
+      builder: (_) => Dialog(
+        backgroundColor: Colors.black,
+
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+
+          children: [
+            Container(
+              width: double.infinity,
+              height: 300,
+              color: Colors.black,
+
+              child: const Center(
+                child: Icon(
+                  Icons.play_circle_outline,
+                  color: Colors.white,
+                  size: 80,
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+
+              child: Text(
+                videoUrl,
+
+                style:
+                    const TextStyle(color: Colors.white),
+
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

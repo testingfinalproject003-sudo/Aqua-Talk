@@ -10,7 +10,7 @@ import 'package:aqua_talk/services/user_service.dart';
 
 import 'package:aqua_talk/screens/setting/profile_screen.dart';
 
-import 'package:aqua_talk/screens/setting/favorite_screen.dart';
+
 import 'package:aqua_talk/screens/login/login_screen.dart';
 
 import 'blocked_users_screen.dart'; // Add 
@@ -128,13 +128,7 @@ class _SettingsTabState extends State<SettingsTab> {
             _buildThemeSwitch(context),
             _buildDivider(context),
            
-            _buildSettingsTile(
-              Icons.favorite_rounded,
-              "Favorite Contacts",
-              "Manage your priority list",
-              () => _openScreen(const FavoriteScreen()),
-              context,
-            ),
+           
           ]),
 
           _buildSectionTitle("Session", context),

@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +21,6 @@ class ChatScreen extends StatefulWidget {
   final String userImage;
   final bool isOnline;
   final String userId;
-  
 
   const ChatScreen({
     super.key,
@@ -41,20 +40,15 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+final Map<String, GlobalKey> _messageKeys = {};
 
-bool isBlockedByCurrent = false;
-bool isBlockedByOther = false;
-
-
+  bool isBlockedByCurrent = false;
+  bool isBlockedByOther = false;
 
   String? _replyText;
   String? _replyId;
   String _searchQuery = '';
   bool _isSearchMode = false;
-  
-
-  Stream<DocumentSnapshot> get userStream =>
-    FirebaseFirestore.instance.collection('users').doc(widget.userId).snapshots();
 
   @override
   void dispose() {
@@ -62,6 +56,18 @@ bool isBlockedByOther = false;
     _searchController.dispose();
     super.dispose();
   }
+void _scrollToMessage(String messageId) {
+  final key = _messageKeys[messageId];
+
+  if (key != null && key.currentContext != null) {
+    Scrollable.ensureVisible(
+      key.currentContext!,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: 0.3,
+    );
+  }
+}
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
@@ -75,52 +81,129 @@ bool isBlockedByOther = false;
     return "${d.hour}:${d.minute.toString().padLeft(2, '0')}";
   }
 
-  PreferredSizeWidget _buildAppBar({
-    required bool hasSelection,
-    String status = '',
-  }) {
+  // ✅ PINNED MESSAGE BANNER: AppBar ke neeche
+  Widget _buildPinnedMessageBanner(Map<String, dynamic> pinnedData) {
+  return GestureDetector(
+    onTap: () {
+      final messageId = pinnedData['messageId'];
+
+      if (messageId != null) {
+        _scrollToMessage(messageId);
+      }
+    },
+    child: Container(
+      width: double.infinity,
+      color: const Color(0xFF004D40).withValues(alpha: 0.95),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          const Icon(Icons.push_pin,
+              color: Color(0xFF80CBC4), size: 18),
+          const SizedBox(width: 10),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Pinned Message',
+                  style: TextStyle(
+                    color: Color(0xFF80CBC4),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  pinnedData['text']?.toString() ?? 'Media message',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          IconButton(
+            icon: const Icon(
+              Icons.close,
+              color: Colors.white70,
+              size: 18,
+            ),
+            onPressed: () async {
+              await context.read<ChatProvider>().togglePinMessage(
+                    chatId: widget.chatId,
+                    messageId: pinnedData['messageId'] ?? '',
+                    isPinned: true,
+                  );
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  // ✅ DARK TEAL APPBAR
+  PreferredSizeWidget _buildAppBar({required bool hasSelection}) {
     final selection = context.watch<ChatSelectionProvider>();
-    final titleStatus = status.isNotEmpty
-        ? status
-        : (widget.isOnline ? 'online' : 'offline');
 
     if (hasSelection) {
       return AppBar(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        backgroundColor: const Color(0xFF004D40),
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () =>
               context.read<ChatSelectionProvider>().clearSelection(),
         ),
-        title: Text('${selection.selectedMessages.length} selected'),
+        title: Text(
+          '${selection.selectedMessages.length} selected',
+          style: const TextStyle(color: Colors.white),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete),
+            icon: const Icon(Icons.delete, color: Colors.white),
             onPressed: _showDeleteDialog,
           ),
-          IconButton(
-            icon: const Icon(Icons.push_pin),
-            onPressed: _togglePinSelected,
-          ),
-          IconButton(
-            icon: const Icon(Icons.star),
-            onPressed: _toggleStarSelected,
+          // ✅ PIN/UNPIN TOGGLE
+          FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('chats')
+                .doc(widget.chatId)
+                .collection('messages')
+                .where(FieldPath.documentId, whereIn: selection.selectedMessages)
+                .get(),
+            builder: (context, snap) {
+              if (!snap.hasData) return const SizedBox();
+              
+              final isPinned = snap.data!.docs.isNotEmpty && 
+                  (snap.data!.docs.first['isPinned'] ?? false) == true;
+              
+              return IconButton(
+                icon: Icon(
+                  isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                  color: Colors.white,
+                ),
+                onPressed: () => _togglePinSelected(isCurrentlyPinned: isPinned),
+              );
+            },
           ),
           if (selection.selectedMessages.length == 1)
             IconButton(
-              icon: const Icon(Icons.reply),
+              icon: const Icon(Icons.reply, color: Colors.white),
               onPressed: _replyToSelected,
             ),
-          IconButton(
-            icon: const Icon(Icons.forward),
-            onPressed: _forwardSelected,
-          ),
         ],
       );
     }
 
     return AppBar(
-      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      backgroundColor: const Color(0xFF004D40),
       title: GestureDetector(
         onTap: () {
           Navigator.push(
@@ -139,58 +222,59 @@ bool isBlockedByOther = false;
               child: widget.userImage.isEmpty ? const Icon(Icons.person) : null,
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                StreamBuilder<DocumentSnapshot>(
-  stream: FirebaseFirestore.instance
-      .collection('users')
-      .doc(widget.userId)
-      .snapshots(),
-  builder: (context, userSnap) {
-    if (!userSnap.hasData || userSnap.data!.data() == null) {
-      return Text(widget.userName);
-    }
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(widget.userId)
+                  .snapshots(),
+              builder: (context, userSnap) {
+                if (!userSnap.hasData || userSnap.data!.data() == null) {
+                  return Text(
+                    widget.userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  );
+                }
 
-    final userData = userSnap.data!.data() as Map<String, dynamic>;
+                final userData = userSnap.data!.data() as Map<String, dynamic>;
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.currentUserId)
-          .collection('contacts')
-          .doc(widget.userId)
-          .snapshots(),
-      builder: (context, contactSnap) {
-        String displayName = userData['name'] ?? widget.userName;
+                return StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(widget.currentUserId)
+                      .collection('contacts')
+                      .doc(widget.userId)
+                      .snapshots(),
+                  builder: (context, contactSnap) {
+                    String displayName = userData['name'] ?? widget.userName;
 
-        if (contactSnap.hasData && contactSnap.data!.exists) {
-          final contactData =
-              contactSnap.data!.data() as Map<String, dynamic>;
-          displayName =
-              contactData['customName'] ?? displayName;
-        }
+                    if (contactSnap.hasData && contactSnap.data!.exists) {
+                      final contactData =
+                          contactSnap.data!.data() as Map<String, dynamic>;
+                      displayName = contactData['customName'] ?? displayName;
+                    }
 
-        return Text(
-          displayName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        );
-      },
-    );
-  },
-),
- 
-                Text(
-                  titleStatus,
-                  style: TextStyle(fontSize: 12, color:  Theme.of(context).textTheme.bodySmall?.color,),
-                ),
-              ],
+                    return Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
       ),
       actions: [
-        IconButton(icon: const Icon(Icons.more_vert), onPressed: _showChatMenu),
+        IconButton(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onPressed: _showChatMenu,
+        ),
       ],
     );
   }
@@ -201,19 +285,17 @@ bool isBlockedByOther = false;
       chatId: widget.chatId,
       userId: widget.userId,
       currentUserId: widget.currentUserId,
+      isBlocked: isBlockedByCurrent,
+      onUnblock: () async {
+        await context.read<ChatProvider>().unblockUser(
+          chatId: widget.chatId,
+          blockedUserId: widget.userId,
+        );
 
-    isBlocked: isBlockedByCurrent,
-
-onUnblock: () async {
-  await context.read<ChatProvider>().unblockUser(
-    chatId: widget.chatId,
-    blockedUserId:  widget.userId,
-  );
-
-  if (!mounted) return;
-  setState(() {});
-  isBlockedByCurrent = false; // UI refresh
-},
+        if (!mounted) return;
+        setState(() {});
+        isBlockedByCurrent = false;
+      },
       onViewContact: () {
         Navigator.push(
           context,
@@ -237,7 +319,6 @@ onUnblock: () async {
           ),
         );
       },
-      
       onGallery: _showGalleryPicker,
       onBlock: _confirmBlock,
       onClearChat: _confirmClearChat,
@@ -251,8 +332,6 @@ onUnblock: () async {
       _searchController.clear();
     });
   }
-
-
 
   Future<void> _showGalleryPicker() async {
     showModalBottomSheet(
@@ -273,14 +352,18 @@ onUnblock: () async {
             children: [
               Text(
                 'Attach from gallery',
-                style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
               ),
-               SizedBox(height: 14),
+              const SizedBox(height: 14),
               ListTile(
-                leading:  Icon(Icons.image, color:  Theme.of(context).textTheme.bodySmall?.color,),
-                title:  Text(
+                leading: Icon(Icons.image,
+                    color: Theme.of(context).textTheme.bodySmall?.color),
+                title: Text(
                   'Image',
-                  style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodySmall?.color),
                 ),
                 onTap: () async {
                   Navigator.pop(context);
@@ -288,10 +371,12 @@ onUnblock: () async {
                 },
               ),
               ListTile(
-                leading:  Icon(Icons.videocam, color:  Theme.of(context).textTheme.bodySmall?.color,),
-                title:  Text(
+                leading: Icon(Icons.videocam,
+                    color: Theme.of(context).textTheme.bodySmall?.color),
+                title: Text(
                   'Video',
-                  style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodySmall?.color),
                 ),
                 onTap: () async {
                   Navigator.pop(context);
@@ -319,7 +404,6 @@ onUnblock: () async {
       receiverId: widget.userId,
       mediaPath: pickedFile.path,
       isVideo: isVideo,
-      // file: picked,
     );
 
     if (!mounted) return;
@@ -327,6 +411,7 @@ onUnblock: () async {
       SnackBar(content: Text(isVideo ? 'Video attached' : 'Image attached')),
     );
   }
+
   void _confirmBlock() {
     showDialog(
       context: context,
@@ -449,18 +534,19 @@ onUnblock: () async {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                     Text(
+                      Text(
                         'Delete selected messages',
                         style: TextStyle(
-                          color:  Theme.of(context).textTheme.bodySmall?.color,
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                       Text(
+                      Text(
                         'Choose delete option',
-                        style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
+                        style: TextStyle(
+                            color: Theme.of(context).textTheme.bodySmall?.color),
                       ),
                       const SizedBox(height: 20),
                       _glassDialogButton(
@@ -524,94 +610,7 @@ onUnblock: () async {
     );
   }
 
-  void _showReactionBar(
-    String messageId,
-    Map<String, List<dynamic>> reactions,
-  ) {
-    final emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
-
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'React to message',
-      barrierColor: Colors.black45,
-      transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.9,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color.fromRGBO(8, 33, 34, 0.82),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'React to message',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 14,
-                        children: emojis.map((emoji) {
-                          final hasReacted =
-                              reactions[emoji]?.contains(
-                                widget.currentUserId,
-                              ) ==
-                              true;
-                          return GestureDetector(
-                            onTap: () async {
-                              Navigator.pop(context);
-                              await context.read<ChatProvider>().toggleReaction(
-                                chatId: widget.chatId,
-                                messageId: messageId,
-                                emoji: emoji,
-                                uid: widget.currentUserId,
-                              );
-                            },
-                            child: Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: hasReacted
-                                    ? Colors.tealAccent.withValues(alpha: 0.3)
-                                    : Colors.white12,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white24),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                emoji,
-                                style: const TextStyle(fontSize: 28),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // ❌ REMOVED: _showMessageReactionBar - ab MessageBubble mein handle hota hai
 
   Future<void> _deleteSelectionForMe() async {
     final selection = context.read<ChatSelectionProvider>();
@@ -644,75 +643,52 @@ onUnblock: () async {
     );
   }
 
-  void _togglePinSelected() async {
+  void _togglePinSelected({required bool isCurrentlyPinned}) async {
     final selection = context.read<ChatSelectionProvider>();
     if (selection.selectedMessages.isEmpty) return;
     final chatProvider = context.read<ChatProvider>();
 
-    final docs = await FirebaseFirestore.instance
+    if (isCurrentlyPinned) {
+      final selectedId = selection.selectedMessages.first;
+      await chatProvider.togglePinMessage(
+        chatId: widget.chatId,
+        messageId: selectedId,
+        isPinned: true,
+      );
+      selection.clearSelection();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Message unpinned')),
+      );
+      return;
+    }
+
+    final allPinned = await FirebaseFirestore.instance
         .collection('chats')
         .doc(widget.chatId)
         .collection('messages')
-        .where(FieldPath.documentId, whereIn: selection.selectedMessages)
+        .where('isPinned', isEqualTo: true)
         .get();
 
-    for (final doc in docs.docs) {
+    for (final doc in allPinned.docs) {
       await chatProvider.togglePinMessage(
         chatId: widget.chatId,
         messageId: doc.id,
-        isPinned: doc['isPinned'] ?? false,
+        isPinned: true,
       );
     }
+
+    final selectedId = selection.selectedMessages.first;
+    await chatProvider.togglePinMessage(
+      chatId: widget.chatId,
+      messageId: selectedId,
+      isPinned: false,
+    );
+
     selection.clearSelection();
-  }
-
-  void _toggleStarSelected() async {
-    final selection = context.read<ChatSelectionProvider>();
-    if (selection.selectedMessages.isEmpty) return;
-    final chatProvider = context.read<ChatProvider>();
-
-    final docs = await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .where(FieldPath.documentId, whereIn: selection.selectedMessages)
-        .get();
-
-    for (final doc in docs.docs) {
-      await chatProvider.toggleStarMessage(
-        chatId: widget.chatId,
-        messageId: doc.id,
-        isStarred: doc['isStarred'] ?? false,
-      );
-    }
-    selection.clearSelection();
-  }
-
-  void _forwardSelected() async {
-    final selection = context.read<ChatSelectionProvider>();
-    if (selection.selectedMessages.isEmpty) return;
-    final messenger = ScaffoldMessenger.of(context);
-    final selectionProvider = context.read<ChatSelectionProvider>();
-
-    final docs = await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .where(FieldPath.documentId, whereIn: selection.selectedMessages)
-        .get();
-
-    final forwardText = docs.docs
-        .map((doc) => doc['text']?.toString() ?? '')
-        .join('\n');
-    await Clipboard.setData(ClipboardData(text: forwardText));
-    selectionProvider.clearSelection();
     if (!mounted) return;
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Selected message text copied. Paste into another chat to forward.',
-        ),
-      ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message pinned')),
     );
   }
 
@@ -720,15 +696,7 @@ onUnblock: () async {
   Widget build(BuildContext context) {
     final selection = context.watch<ChatSelectionProvider>();
     final hasSelection = selection.isSelecting;
-    final chatStream = FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .snapshots();
-    final typingStream = FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('typing')
-        .snapshots();
+
     final messageStream = FirebaseFirestore.instance
         .collection('chats')
         .doc(widget.chatId)
@@ -736,237 +704,236 @@ onUnblock: () async {
         .orderBy('timestamp')
         .snapshots();
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: chatStream,
-      builder: (context, chatSnapshot) {
-        if (chatSnapshot.connectionState == ConnectionState.waiting) {
-          return  Scaffold(
-            appBar: AppBar(title: Text('Loading...')),
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-          if (chatSnapshot.hasError) {
-          return  Scaffold(
-            appBar: AppBar(title: Text('Error')),
-            body: Center(child: Text(chatSnapshot.error.toString()))
-          );
-        }
-
-        
-
-        return StreamBuilder<QuerySnapshot>(
-          stream: typingStream,
-          builder: (context, typingSnapshot) {
-            final isTyping =
-                typingSnapshot.hasData &&
-                typingSnapshot.data!.docs.any(
-                  (doc) => doc.id != widget.currentUserId,
-                );
-            final statusText = isTyping
-                ? 'typing...'
-                : (widget.isOnline ? 'online' : 'offline');
-
-            return Scaffold(
-              appBar: _buildAppBar(
-                hasSelection: hasSelection,
-                status: statusText,
+    return Scaffold(
+      appBar: _buildAppBar(hasSelection: hasSelection),
+      body: Column(
+        children: [
+          if (_isSearchMode) _buildSearchBar(),
+          if (isBlockedByCurrent)
+            Container(
+              width: double.infinity,
+              color: Colors.red.shade800,
+              padding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 16,
               ),
-              body: Column(
-                children: [
-                  if (_isSearchMode) _buildSearchBar(),
-                  if (isBlockedByCurrent)
-                    Container(
-                      width: double.infinity,
-                      color: Colors.red.shade800,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 16,
-                      ),
-                      child: const Text(
-                        'You have blocked this user. Messages are hidden.',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  if (isBlockedByOther)
-                    Container(
-                      width: double.infinity,
-                      color: Colors.orange.shade800,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 16,
-                      ),
-                      child: const Text(
-                        'You are blocked by this user. Chat sending may be restricted.',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  Expanded(
-                    child: StreamBuilder<QuerySnapshot>(
-                      stream: messageStream,
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
+              child: const Text(
+                'You have blocked this user. Messages are hidden.',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          if (isBlockedByOther)
+            Container(
+              width: double.infinity,
+              color: Colors.orange.shade800,
+              padding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 16,
+              ),
+              child: const Text(
+                'You are blocked by this user. Chat sending may be restricted.',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: messageStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const SizedBox();
+                }
 
-                        var docs = snapshot.data!.docs.where((doc) {
-                          final deletedFor = List.from(doc['deletedFor'] ?? []);
-                          return !deletedFor.contains(widget.currentUserId);
-                        }).toList();
+                var docs = snapshot.data!.docs.where((doc) {
+                  final deletedFor = List.from(doc['deletedFor'] ?? []);
+                  return !deletedFor.contains(widget.currentUserId);
+                }).toList();
 
-                        if (_searchQuery.isNotEmpty) {
-                          docs = docs.where((doc) {
-                            final text =
-                                doc['text']?.toString().toLowerCase() ?? '';
-                            return text.contains(_searchQuery.toLowerCase());
-                          }).toList();
-                        }
+                if (_searchQuery.isNotEmpty) {
+                  docs = docs.where((doc) {
+                    final text =
+                        doc['text']?.toString().toLowerCase() ?? '';
+                    return text.contains(_searchQuery.toLowerCase());
+                  }).toList();
+                }
 
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _scrollToBottom();
-                        });
+                // Find pinned message for banner
+                Map<String, dynamic>? pinnedMessageData;
+                final pinnedDocs = docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['isPinned'] == true;
+                }).toList();
 
-                        if (docs.isEmpty) {
-                          return const Center(child: Text('No messages yet.'));
-                        }
+                if (pinnedDocs.isNotEmpty) {
+                  pinnedMessageData = {
+                    ...pinnedDocs.first.data() as Map<String, dynamic>,
+                    'messageId': pinnedDocs.first.id,
+                  };
+                }
 
-                        return ListView.builder(
-                          controller: _scrollController,
-                          itemCount: docs.length,
-                          itemBuilder: (_, i) {
-                            final document = docs[i];
-                            final data = (document.data() as Map<String, dynamic>?) ?? {};
-                            final isMe = data['senderId'] == widget.currentUserId;
-                            final currentReactions =
-                                Map<String, List<dynamic>>.from(
-                                  data['reactions'] ?? {},
-                                );
-                            final type = data['type']?.toString() ?? 'text';
-                            final messageText = type == 'audio'
-                                ? 'Audio message unavailable'
-                                : data['text']?.toString() ?? '';
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _scrollToBottom();
+                });
 
-                            return MessageBubble(
-                              text: messageText,
-                              isMe: isMe,
-                              time: _format(data['timestamp']),
-                              chatId: widget.chatId,
-                              messageId: document.id,
-                              currentUserId: widget.currentUserId,
-                              reactions: currentReactions,
-                              isEdited: data['isEdited'] ?? false,
-                              isPinned: data['isPinned'] ?? false,
-                              isStarred: data['isStarred'] ?? false,
-                              replyText: data['replyText']?.toString(),
-                             
-                              highlightQuery: _searchQuery,
-                              image: data['image']?.toString(),
-                              onSwipeReply: () {
-                                setState(() {
-                                  _replyText = data['text']?.toString();
-                                  _replyId = document.id;
-                                });
-                              },
-                              onLongPressAction: () =>
-                                  _showReactionBar(document.id, currentReactions),
-                              onReact: (emoji) async {
-                                await context
-                                    .read<ChatProvider>()
-                                    .toggleReaction(
-                                      chatId: widget.chatId,
-                                      messageId: document.id,
-                                      emoji: emoji,
-                                      uid: widget.currentUserId,
-                                    );
-                              },
-                              onDoubleTap: () async {
-                                await context
-                                    .read<ChatProvider>()
-                                    .toggleReaction(
-                                      chatId: widget.chatId,
-                                      messageId: document.id,
-                                      emoji: '❤️',
-                                      uid: widget.currentUserId,
-                                    );
-                              },
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  if (_replyText != null)
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      color: Colors.grey.shade200,
-                      child: Row(
-                        children: [
-                          Expanded(child: Text('Replying: $_replyText')),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
+                if (docs.isEmpty) {
+                  return const Center(child: Text('No messages yet.'));
+                }
+
+                return Column(
+                  children: [
+                    if (pinnedMessageData != null && !hasSelection)
+                      _buildPinnedMessageBanner(pinnedMessageData),
+                    Expanded(
+                      child: ListView.builder(
+  controller: _scrollController,
+  itemCount: docs.length,
+  itemBuilder: (_, i) {
+    final document = docs[i];
+
+    final data =
+        (document.data() as Map<String, dynamic>?) ?? {};
+
+    final isMe =
+        data['senderId'] == widget.currentUserId;
+
+    final currentReactions =
+        Map<String, List<dynamic>>.from(
+      data['reactions'] ?? {},
+    );
+
+    final type =
+        data['type']?.toString() ?? 'text';
+
+    final messageText = type == 'audio'
+        ? 'Audio message unavailable'
+        : data['text']?.toString() ?? '';
+
+    // ✅ ADD THIS
+    final messageId = document.id;
+
+    _messageKeys.putIfAbsent(
+      messageId,
+      () => GlobalKey(),
+    );
+
+    // ✅ WRAP WITH CONTAINER
+    return Container(
+      key: _messageKeys[messageId],
+
+      child: MessageBubble(
+                            text: messageText,
+                            isMe: isMe,
+                            time: _format(data['timestamp']),
+                            chatId: widget.chatId,
+                            messageId: document.id,
+                            currentUserId: widget.currentUserId,
+                            reactions: currentReactions,
+                            isEdited: data['isEdited'] ?? false,
+                            isPinned: data['isPinned'] ?? false,
+                            isStarred: false,
+                            replyText: data['replyText']?.toString(),
+                            highlightQuery: _searchQuery,
+                            image: data['image']?.toString(),
+                            videoUrl: data['videoUrl']?.toString(),
+                            onSwipeReply: () {
                               setState(() {
-                                _replyText = null;
-                                _replyId = null;
+                                _replyText = data['text']?.toString();
+                                _replyId = document.id;
                               });
                             },
-                          ),
-                        ],
+                            // ✅ FIXED: onReact callback pass karo
+                            onReact: (emoji) async {
+                              if (!mounted) return;
+                              await context.read<ChatProvider>().toggleReaction(
+                                chatId: widget.chatId,
+                                messageId: document.id,
+                                emoji: emoji,
+                                uid: widget.currentUserId,
+                              );
+                            },
+                            onDoubleTap: () async {
+                              await context.read<ChatProvider>().toggleReaction(
+                                chatId: widget.chatId,
+                                messageId: document.id,
+                                emoji: '❤️',
+                                uid: widget.currentUserId,
+                              );
+                            },
+      ),
+                          );
+                        },
                       ),
                     ),
-                  InputBar(
-                    chatId: widget.chatId,
-                    currentUserId: widget.currentUserId,
-                    receiverId: widget.userId,
-                    onSend: (text) async {
-                      if (text.trim().isEmpty) return;
-                      if (isBlockedByOther) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Cannot send message while blocked.'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      await context.read<ChatProvider>().setTyping(
-                        chatId: widget.chatId,
-                        uid: widget.currentUserId,
-                        isTyping: false,
-                      );
-if (!context.mounted) return;
-                      await context.read<ChatProvider>().sendMessage(
-                        chatId: widget.chatId,
-                        text: text,
-                        senderId: widget.currentUserId,
-                        receiverId: widget.userId,
-                        replyTo: _replyId,
-                        replyText: _replyText,
-                      );
-
-                      if (!context.mounted) return;
+                  ],
+                );
+              },
+            ),
+          ),
+          if (_replyText != null)
+            Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.grey.shade200,
+              child: Row(
+                children: [
+                  Expanded(child: Text('Replying: $_replyText')),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
                       setState(() {
                         _replyText = null;
                         _replyId = null;
                       });
                     },
-                    onTyping: (typing) async {
-                      await context.read<ChatProvider>().setTyping(
-                        chatId: widget.chatId,
-                        uid: widget.currentUserId,
-                        isTyping: typing,
-                      );
-                    },
-                    onAttachmentTap: _showGalleryPicker,
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          InputBar(
+            chatId: widget.chatId,
+            currentUserId: widget.currentUserId,
+            receiverId: widget.userId,
+            onSend: (text) async {
+              if (text.trim().isEmpty) return;
+              if (isBlockedByOther) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Cannot send message while blocked.'),
+                  ),
+                );
+                return;
+              }
+
+              await context.read<ChatProvider>().setTyping(
+                chatId: widget.chatId,
+                uid: widget.currentUserId,
+                isTyping: false,
+              );
+              if (!context.mounted) return;
+              await context.read<ChatProvider>().sendMessage(
+                chatId: widget.chatId,
+                text: text,
+                senderId: widget.currentUserId,
+                receiverId: widget.userId,
+                replyTo: _replyId,
+                replyText: _replyText,
+              );
+
+              if (!context.mounted) return;
+              setState(() {
+                _replyText = null;
+                _replyId = null;
+              });
+            },
+            onTyping: (typing) async {
+              await context.read<ChatProvider>().setTyping(
+                chatId: widget.chatId,
+                uid: widget.currentUserId,
+                isTyping: typing,
+              );
+            },
+            onAttachmentTap: _showGalleryPicker,
+          ),
+        ],
+      ),
     );
   }
 
@@ -979,7 +946,7 @@ if (!context.mounted) return;
           Expanded(
             child: TextField(
               controller: _searchController,
-              style:  TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 hintText: 'Search messages',
                 hintStyle: TextStyle(color: Colors.white70),
