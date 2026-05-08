@@ -93,8 +93,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       const TextSpan(
                         text: "Read our ",
                       ),
-
-                      // 🔗 Privacy Policy
                       WidgetSpan(
                         child: GestureDetector(
                           onTap: () {

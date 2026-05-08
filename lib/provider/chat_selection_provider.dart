@@ -14,13 +14,11 @@ class ChatSelectionProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
-
   void clearSelection() {
     _selected.clear();
     notifyListeners();
   }
 
-  // ⭐ NEW: select all support
   void selectAll(List<String> ids) {
     _selected
       ..clear()

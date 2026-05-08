@@ -4,7 +4,6 @@ import 'package:aqua_talk/provider/gradient_provider.dart';
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
-  // Theme Colors
   static const Color primaryTeal = Color(0xFF0A554D);
   static const Color accentTeal = Color(0xFF80CBC4);
 

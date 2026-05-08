@@ -9,11 +9,9 @@ class BlockedUsersScreen extends StatelessWidget {
     required this.currentUserId,
   });
 
-  // ================= UNBLOCK FUNCTION =================
 
 Future<void> _unblockUser(String blockedUserId) async {
 
-  // ================= 1. REMOVE FROM USER LIST =================
   await FirebaseFirestore.instance
       .collection('users')
       .doc(currentUserId)
@@ -21,13 +19,11 @@ Future<void> _unblockUser(String blockedUserId) async {
     'blockedUsers': FieldValue.arrayRemove([blockedUserId])
   });
 
-  // ================= 2. FIND CHAT ID =================
-  // SAME logic jo tum chat create karte waqt use karte ho
   final chatId = currentUserId.hashCode <= blockedUserId.hashCode
       ? "${currentUserId}_$blockedUserId"
       : "${blockedUserId}_$currentUserId";
 
-  // ================= 3. REMOVE FROM CHAT BLOCK =================
+ 
   await FirebaseFirestore.instance
       .collection('chats')
       .doc(chatId)
@@ -35,7 +31,7 @@ Future<void> _unblockUser(String blockedUserId) async {
     'blockedBy': FieldValue.arrayRemove([currentUserId])
   });
 }
-  // ================= GLASS DIALOG =================
+ 
   void _showUnblockDialog(BuildContext context, String userId) {
     showDialog(
       context: context,
@@ -143,7 +139,7 @@ Future<void> _unblockUser(String blockedUserId) async {
                   final blockedUserId = userDoc.id;
 
                   return GestureDetector(
-                    // ================= LONG PRESS =================
+                    
                     onLongPress: () {
                       _showUnblockDialog(context, blockedUserId);
                     },
@@ -166,7 +162,7 @@ Future<void> _unblockUser(String blockedUserId) async {
                       title: Text(userName),
                       subtitle: const Text('Blocked user'),
 
-                      // ================= UNBLOCK BUTTON =================
+                     
                       trailing: TextButton(
                         onPressed: () =>
                             _showUnblockDialog(context, blockedUserId),

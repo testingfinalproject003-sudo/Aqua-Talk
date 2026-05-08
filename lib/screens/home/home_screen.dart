@@ -260,30 +260,28 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
       ),
 
       // ---------------- BOTTOM NAV ----------------
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: changeTab, // ✅ replaced provider
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white60,
-        backgroundColor: darkTeal,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            activeIcon: Icon(Icons.chat_bubble_rounded),
-            label: "Chats",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.donut_large_rounded),
-            label: "Updates",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings_rounded),
-            label: "Settings",
-          ),
-        ],
-      ),
+    bottomNavigationBar: BottomNavigationBar(
+  currentIndex: currentIndex,
+  onTap: changeTab,
+  type: BottomNavigationBarType.fixed,
+
+  items: const [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.chat_bubble_outline_rounded),
+      activeIcon: Icon(Icons.chat_bubble_rounded),
+      label: "Chats",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.donut_large_rounded),
+      label: "Updates",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.settings_outlined),
+      activeIcon: Icon(Icons.settings_rounded),
+      label: "Settings",
+    ),
+  ],
+),
 
       // ---------------- FAB ----------------
       floatingActionButton: currentIndex == 2

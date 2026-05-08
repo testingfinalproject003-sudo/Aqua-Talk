@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:aqua_talk/screens/setting/profile_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
 import 'splash_screen.dart';
+
 
 class OtpScreen extends StatefulWidget {
   final String verificationId;
@@ -126,13 +128,13 @@ class _OtpScreenState extends State<OtpScreen> {
 
     try {
       PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId, // use updated verificationId
+        verificationId: _verificationId, 
         smsCode: enteredOtp.trim(),
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
 
-      if (!mounted) return;
+      // if (!mounted) return;
       setState(() => isLoading = false);
       _navigateToHome();
     } on FirebaseAuthException catch (e) {
@@ -154,7 +156,7 @@ class _OtpScreenState extends State<OtpScreen> {
   void _navigateToHome() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const SplashScreen()),
+      MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
       (route) => false,
     );
   }

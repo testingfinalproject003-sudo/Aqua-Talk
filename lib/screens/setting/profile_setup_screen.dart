@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 // import 'package:provider/provider.dart';
@@ -11,13 +12,13 @@ import '../../services/user_service.dart';
 import '../home/home_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
-  final String uid;
-  final String phoneNumber;
+  // final String uid;
+  // final String phoneNumber;
 
   const ProfileSetupScreen({
     super.key,
-    required this.uid,
-    required this.phoneNumber,
+    // required this.uid,
+    // required this.phoneNumber,
   });
 
   @override
@@ -41,7 +42,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   @override
   void initState() {
     super.initState();
-    _phoneController.text = widget.phoneNumber;
+    _phoneController.text = FirebaseAuth.instance.currentUser?.phoneNumber  ?? '';
   }
 
   @override
@@ -71,7 +72,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     try {
       await _userService.updateProfile(
-        uid: widget.uid,
+        uid: FirebaseAuth.instance.currentUser!.uid,
         name: data['name'],
         about: data['about'],
         profilePic: data['profilePic'],
@@ -150,7 +151,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       
 
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: _userService.getUser(widget.uid),
+          stream: _userService.getUser(FirebaseAuth.instance.currentUser!.uid),
           builder: (context, snapshot) {
             final data = snapshot.data?.data();
         
