@@ -85,7 +85,7 @@ class _InputBarState extends State<InputBar> {
             height: 300,
             margin: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: const Color(0xFF004D40).withValues(alpha: 0.9),
+              color: const Color(0xFF004D4D).withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(25),
               border: Border.all(color: Colors.white10),
             ),

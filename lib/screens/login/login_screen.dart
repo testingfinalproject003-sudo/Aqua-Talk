@@ -185,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: Container(
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: GradientProvider.mainGradient),
+        decoration: const BoxDecoration(gradient: GradientProvider.lightGradient),
         child: Stack(
           children: [
             Padding(

@@ -62,7 +62,7 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Selected: ${file.name}"),
-            backgroundColor: darkTeal,
+            backgroundColor: Color(0xFF004D4D),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -81,7 +81,7 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            color: darkTeal.withValues(alpha: 0.4),
+            color: Color(0xFF004D4D).withValues(alpha: 0.4),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
           ),
@@ -233,7 +233,7 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 26,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
+                  color: Colors.white
                 ),
               ),
               actions: [
@@ -253,9 +253,11 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
       body: Container(
         height: double.infinity,
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
-        ),
+       decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
         child: pages[currentIndex],
       ),
 
@@ -312,13 +314,12 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
           FloatingActionButton(
             heroTag: 'main_fab',
             backgroundColor: theme.isDark
-                ? const Color(0xFF80CBC4)
+                ? darkTeal
                 : darkTeal,
             elevation: 4,
             child: Icon(
-              currentIndex == 0
-                  ? Icons.message_rounded
-                  : Icons.camera_alt_rounded,
+              Icons.message_rounded,
+                  
               color: Colors.white,
             ),
             onPressed: () {
@@ -332,10 +333,7 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
             );
           }
 
-          // ================== CAMERA TAB ==================
-          if (currentIndex == 1) {
-            _showGlassyCameraSheet(context);
-          }
+          
         },
       ),
         ]

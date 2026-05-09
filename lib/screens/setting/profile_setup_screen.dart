@@ -11,6 +11,9 @@ import '../../provider/gradient_provider.dart';
 import '../../services/user_service.dart';
 import '../home/home_screen.dart';
 
+import 'package:provider/provider.dart';
+import '../../provider/theme_provider.dart';
+
 class ProfileSetupScreen extends StatefulWidget {
   // final String uid;
   // final String phoneNumber;
@@ -132,7 +135,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-   
+    final theme = context.watch<ThemeProvider>();
     
 
     return Scaffold(
@@ -145,9 +148,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
-          ),
+       decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
       
 
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -193,7 +198,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     onTap: _pickImage,
                     child: CircleAvatar(
                       radius: 70,
-                      backgroundColor: darkTeal,
+                      backgroundColor: Color(0xFF0F3D3E),
                       backgroundImage: _profilePic.isNotEmpty
                           ? FileImage(File(_profilePic))
                           : null,

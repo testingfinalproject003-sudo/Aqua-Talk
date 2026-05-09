@@ -126,7 +126,7 @@ class _SettingsTabState extends State<SettingsTab> {
 ),
             _buildDivider(context),
             _buildThemeSwitch(context),
-            _buildDivider(context),
+            
            
            
           ]),

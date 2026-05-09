@@ -27,7 +27,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
+          gradient: GradientProvider.lightGradient,
         ),
         child: SafeArea(
           // 🔥 Fix: SingleChildScrollView is correctly placed here

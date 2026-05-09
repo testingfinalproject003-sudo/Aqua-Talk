@@ -132,7 +132,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
             ElevatedButton(
               onPressed: _saveStory,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF008080),
+                backgroundColor: const Color(0xFF0F3D3E),
               ),
               child: _isUploading
                   ? const SizedBox(

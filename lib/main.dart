@@ -70,14 +70,14 @@ class MaterialAppRoot extends StatelessWidget {
       brightness: Brightness.light,
 
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF008080),
+        backgroundColor: Color(0xFF004D4D),
         foregroundColor: Colors.white,
       ),
 
       // ✅ BOTTOM BAR THEME
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: Color(0xFF008080),
+        backgroundColor: Color(0xFF004D4D),
+        selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
       ),
     );

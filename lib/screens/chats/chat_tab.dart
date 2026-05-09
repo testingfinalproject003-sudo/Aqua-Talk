@@ -8,6 +8,9 @@ import '../../provider/chat_selection_provider.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+
+import '../../provider/theme_provider.dart';
+
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});
 
@@ -19,19 +22,19 @@ class _ChatTabState extends State<ChatTab> {
   String search = "";
   String activeFilter = "All";
 
-  final List<String> filters = ["All", "Unread", "Pinned", "Favorite"];
+  final List<String> filters = ["All", "Unread", "Favorite"];
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ChatProvider>();
     final selection = context.watch<ChatSelectionProvider>();
     final myId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
+    final theme = context.watch<ThemeProvider>();
     return Scaffold(
       // ================= SELECTION APPBAR =================
       appBar: selection.isSelecting
           ? AppBar(
-              backgroundColor: const Color(0xFF004D40),
+              backgroundColor: const Color(0xFF004D4D),
               foregroundColor: Colors.white,
               leading: IconButton(
                 icon: const Icon(Icons.close),
@@ -135,16 +138,16 @@ class _ChatTabState extends State<ChatTab> {
         ],
       ),
     ),
-    const PopupMenuItem(
-      value: 'block',
-      child: Row(
-        children: [
-          Icon(Icons.block, color: Colors.red),
-          SizedBox(width: 12),
-          Text('Block', style: TextStyle(color: Colors.red)),
-        ],
-      ),
-    ),
+    // const PopupMenuItem(
+    //   value: 'block',
+    //   child: Row(
+    //     children: [
+    //       Icon(Icons.block, color: Colors.red),
+    //       SizedBox(width: 12),
+    //       Text('Block', style: TextStyle(color: Colors.red)),
+    //     ],
+    //   ),
+    // ),
   ],
 ),
               ],
@@ -155,9 +158,11 @@ class _ChatTabState extends State<ChatTab> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
-        ),
+        decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
         child: Column(
           children: [
             // ================= SEARCH =================
@@ -167,9 +172,13 @@ class _ChatTabState extends State<ChatTab> {
                 onChanged: (val) => setState(() => search = val),
                 decoration: InputDecoration(
                   hintText: "Search chats...",
+                    hintStyle: Theme.of(context) .textTheme.bodySmall,
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
-                  fillColor: const Color(0xFFBDE9E4),
+                  fillColor: Theme.of(context).brightness ==
+                Brightness.dark
+            ? const Color(0xFF1E1E1E)
+            : const Color(0xFFBDE9E4),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25),
                     borderSide: BorderSide.none,
@@ -193,10 +202,12 @@ class _ChatTabState extends State<ChatTab> {
                       margin: const EdgeInsets.symmetric(horizontal: 6),
                       padding:
                           const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.teal
-                            : const Color(0xFF9FD8CA),
+                       decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).primaryColor
+                : Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF2A2A2A)
+                    : const Color(0xFF9FD8CA),
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: Center(
@@ -248,8 +259,7 @@ chats.sort((a, b) {
                     switch (activeFilter) {
                       case "Unread":
                         return c.unreadCount > 0;
-                      case "Pinned":
-                        return c.isPinned;
+                     
                       case "Favorite":
                         return c.isFavorite;
                       default:

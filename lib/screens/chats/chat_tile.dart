@@ -201,7 +201,9 @@ class ChatTile extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 24,
-                              backgroundColor: Colors.grey.shade300,
+                              backgroundColor: Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF2C2C2C)
+      : const Color(0xFF659792),
                               backgroundImage:
                                   (imageUrl != null && imageUrl.isNotEmpty)
                                       ? NetworkImage(imageUrl)
@@ -241,10 +243,7 @@ class ChatTile extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                if (chat.isPinned)
-                                  const Icon(Icons.push_pin,
-                                      size: 14, color: darkTeal),
-                                if (chat.isPinned) const SizedBox(width: 5),
+                               
                                 Expanded(
                                   child: Text(
                                     displayName,
@@ -254,7 +253,7 @@ class ChatTile extends StatelessWidget {
                                       fontWeight: (chat.unread > 0 || chat.unreadCount > 0)
                                           ? FontWeight.bold
                                           : FontWeight.w500,
-                                      color: darkTeal,
+                                       color: Theme.of(context).textTheme.bodyLarge?.color,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -272,8 +271,9 @@ class ChatTile extends StatelessWidget {
                                     ? FontWeight.w600
                                     : FontWeight.normal,
                                 color: (chat.unread > 0 || chat.unreadCount > 0)
-                                    ? darkTeal
-                                    : darkTeal.withValues(alpha: 0.6),
+                                   ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).textTheme.bodySmall?.color,
+        
                               ),
                             ),
                           ],
@@ -293,10 +293,10 @@ class ChatTile extends StatelessWidget {
                               // ✅ UNREAD: Bold time if unread
                               fontWeight: (chat.unread > 0 || chat.unreadCount > 0)
                                   ? FontWeight.bold
-                                  : FontWeight.normal,
+                                  : FontWeight.bold,
                               color: (chat.unread > 0 || chat.unreadCount > 0)
                                   ? darkTeal
-                                  : darkTeal.withValues(alpha: 0.5),
+                                  : Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -315,8 +315,10 @@ class ChatTile extends StatelessWidget {
                                 chat.unread > 0
                                     ? (chat.unread > 99 ? '99+' : chat.unread.toString())
                                     : (chat.unreadCount > 99 ? '99+' : chat.unreadCount.toString()),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style:  TextStyle(
+                                  color:  (chat.unread > 0 || chat.unreadCount > 0)
+? darkTeal
+                                  : Colors.white.withValues(alpha: 0.5),
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),

@@ -11,6 +11,10 @@ import 'package:aqua_talk/screens/story/story_viewer.dart';
 import 'package:aqua_talk/screens/setting/settings_tab.dart';
 import 'package:aqua_talk/widgets/glass_container.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
+
+
+import '../../provider/theme_provider.dart';
+
 class StoryScreen extends StatefulWidget {
   const StoryScreen({super.key});
 
@@ -148,14 +152,14 @@ class _StoryScreenState extends State<StoryScreen> {
         provider.stories.where((s) => s.userId == currentUserId).toList();
 
     final hasMyStatus = myStories.isNotEmpty;
-
+    final theme = context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: Colors.transparent,
 
       // ================= APP BAR =================
       appBar: AppBar(
         
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
 
         // 👇 SAME FIX (spacing)
@@ -180,7 +184,7 @@ class _StoryScreenState extends State<StoryScreen> {
                 setState(() => _isSearching = !_isSearching),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon:  Icon(Icons.arrow_drop_down, color: Theme.of(context).textTheme.bodySmall?.color,),
             onSelected: (val) {
               if (val == 'privacy') {
                 _showGlassyPrivacySheet(context);
@@ -206,9 +210,11 @@ class _StoryScreenState extends State<StoryScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
-        ),
+        decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
         child: SafeArea(
           child: StreamBuilder<List<StoryModel>>(
             stream: _storyService.activeStoriesStream(),
@@ -261,7 +267,7 @@ class _StoryScreenState extends State<StoryScreen> {
                                 ? NetworkImage(user!.photoURL!)
                                 : null,
                             child: user?.photoURL == null
-                                ? const Icon(Icons.person, color: primaryTeal)
+                                ? const Icon(Icons.person, color: Colors.white)
                                 : null,
                           ),
                           if (!hasMyStatus)
@@ -328,17 +334,11 @@ class _StoryScreenState extends State<StoryScreen> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          FloatingActionButton.small(
-            heroTag: "text",
-            backgroundColor: Colors.grey.shade200,
-            child: const Icon(Icons.edit, color: primaryTeal),
-            onPressed: () {},
-          ),
-          const SizedBox(height: 12),
+         
           FloatingActionButton(
             heroTag: "cam",
             backgroundColor: accentTeal,
-            child: const Icon(Icons.camera_alt, color: primaryTeal),
+            child: const Icon(Icons.camera_alt, color: Color(0xFF0F3D3E)),
             onPressed: () => _showCameraOptions(context),
           ),
         ],
@@ -404,7 +404,7 @@ class _StoryScreenState extends State<StoryScreen> {
           CircleAvatar(
             radius: 28,
             backgroundColor: Colors.white24,
-            child: Icon(icon, color: primaryTeal),
+            child: Icon(icon, color: Color(0xFF0F3D3E)),
           ),
           const SizedBox(height: 8),
           Text(label,

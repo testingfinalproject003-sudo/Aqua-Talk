@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:aqua_talk/provider/gradient_provider.dart';
 
+import 'package:provider/provider.dart';
+import '../../provider/theme_provider.dart';
+
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
 
@@ -10,6 +13,7 @@ class TermsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+     final theme = context.watch<ThemeProvider>();
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -27,9 +31,11 @@ class TermsScreen extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
-        ),
+       decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
         child: SafeArea(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),

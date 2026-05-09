@@ -51,6 +51,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _profilePic = image.path);
     await _saveProfile(profilePic: image.path);
   }
+// NEW: Profile Picture Remove karny ki logic
+  Future<void> _removeImage() async {
+    setState(() => _profilePic = '');
+    await _saveProfile(profilePic: ''); // Database mein empty string bhej dega
+    if (mounted) {
+      Navigator.pop(context); // Dialog band karny ke liye
+    }
+  }
+
+  // NEW: Image par tap karny se full screen show hogi
+  void _viewProfileImage() {
+    if (_profilePic.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: _profilePic.startsWith('http') 
+                  ? Image.network(_profilePic) 
+                  : Image.file(File(_profilePic)),
+            ),
+            const SizedBox(height: 10),
+            TextButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close, color: Colors.white),
+              label: const Text("Close", style: TextStyle(color: Colors.white)),
+            )
+          ],
+        ),
+      ),
+    );
+  }
 
   void _editField(String title, TextEditingController controller) {
     showDialog(
@@ -189,7 +225,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Stack(
         alignment: Alignment.bottomRight,
         children: [
-          Container(
+
+          GestureDetector(
+          onTap: _viewProfileImage, // Tap karny pe image open hogi
+          onLongPress: () {
+            // AGAR IMAGE HAI TO REMOVE KA OPTION DIKHAYEGA
+            if (_profilePic.isNotEmpty) {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) => Wrap(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.delete, color: Colors.red),
+                      title: const Text('Remove Photo'),
+                      onTap: () {
+                        Navigator.pop(context); // Bottom sheet band karein
+                        _removeImage(); // AB YEH REFERENCE HO GAYA HAI
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+
+  child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -202,6 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: _profilePic.isEmpty ? const Icon(Icons.person, size: 70, color: Colors.white) : null,
             ),
           ),
+          ),
           GestureDetector(
             onTap: _pickImage,
             child: CircleAvatar(
@@ -210,6 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF004D40), size: 20),
             ),
           ),
+          
         ],
       ),
     );

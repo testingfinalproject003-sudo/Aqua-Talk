@@ -1,7 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../provider/gradient_provider.dart';
+import 'package:provider/provider.dart';
 
+import '../../provider/theme_provider.dart';
 class UserProfileScreen extends StatelessWidget {
   final String userId; // ⭐ IMPORTANT
 
@@ -21,15 +24,24 @@ class UserProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F4),
+     
 
       appBar: AppBar(
         title: const Text("Profile"),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
 
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      body: Container(
+        height: double.infinity,
+        width: double.infinity,
+       decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
+        child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: getUser(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -52,7 +64,8 @@ class UserProfileScreen extends StatelessWidget {
 
                 // ================= PROFILE HEADER =================
                 _glassCard(
-                  child: Column(
+                   context,
+                child: Column(
                     children: [
                       const SizedBox(height: 20),
 
@@ -88,21 +101,16 @@ class UserProfileScreen extends StatelessWidget {
 
                       Text(
                         name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: darkTeal,
+                          color:Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                       ),
 
-                      const SizedBox(height: 5),
+                     
 
-                      Text(
-                        isOnline ? "online" : "offline",
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-
-                      const SizedBox(height: 20),
+                    
                     ],
                   ),
                 ),
@@ -111,8 +119,9 @@ class UserProfileScreen extends StatelessWidget {
 
                 // ================= ABOUT =================
                 _glassCard(
+                   context,
                   child: ListTile(
-                    leading: const Icon(Icons.info, color: darkTeal),
+                    leading:  Icon(Icons.info, color: Theme.of(context).iconTheme.color,),
                     title: const Text("About"),
                     subtitle: Text(about),
                   ),
@@ -122,8 +131,9 @@ class UserProfileScreen extends StatelessWidget {
 
                 // ================= PHONE =================
                 _glassCard(
+                   context,
                   child: ListTile(
-                    leading: const Icon(Icons.phone, color: darkTeal),
+                    leading:  Icon(Icons.phone, color:  Theme.of(context).iconTheme.color),
                     title: const Text("Phone"),
                     subtitle: Text(phone),
                   ),
@@ -133,10 +143,13 @@ class UserProfileScreen extends StatelessWidget {
           );
         },
       ),
+      )
     );
   }
+Widget _glassCard(BuildContext context, {required Widget child}) {
+     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  Widget _glassCard({required Widget child}) {
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -145,7 +158,9 @@ class UserProfileScreen extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.7),
+            color:  isDark
+              ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
+              : Colors.white.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white70),
           ),

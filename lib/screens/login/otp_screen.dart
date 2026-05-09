@@ -234,7 +234,7 @@ class _OtpScreenState extends State<OtpScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
+          gradient: GradientProvider.lightGradient,
         ),
         child: Center(
           child: Column(

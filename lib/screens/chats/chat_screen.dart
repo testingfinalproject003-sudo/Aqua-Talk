@@ -155,7 +155,7 @@ void _scrollToMessage(String messageId) {
 
     if (hasSelection) {
       return AppBar(
-        backgroundColor: const Color(0xFF004D40),
+        backgroundColor: const Color(0xFF004D4D),
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () =>
@@ -203,7 +203,7 @@ void _scrollToMessage(String messageId) {
     }
 
     return AppBar(
-      backgroundColor: const Color(0xFF004D40),
+      backgroundColor: const Color(0xFF004D4D),
       title: GestureDetector(
         onTap: () {
           Navigator.push(
@@ -718,7 +718,7 @@ void _scrollToMessage(String messageId) {
                 horizontal: 16,
               ),
               child: const Text(
-                'You have blocked this user. Messages are hidden.',
+                'You blocked this user.',
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -731,7 +731,7 @@ void _scrollToMessage(String messageId) {
                 horizontal: 16,
               ),
               child: const Text(
-                'You are blocked by this user. Chat sending may be restricted.',
+                'You are blocked by this user.',
                 style: TextStyle(color: Colors.white),
               ),
             ),

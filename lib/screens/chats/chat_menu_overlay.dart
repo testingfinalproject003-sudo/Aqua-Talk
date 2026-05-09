@@ -49,13 +49,13 @@ class ChatMenuOverlay {
 
                       const Divider(color: Colors.white30),
                       // 🔥 BLOCK / UNBLOCK FIXED
-                      _item(
-                        context,
-                        Icons.block,
-                        isBlocked ? "Unblock User" : "Block User",
-                        isBlocked ? onUnblock : onBlock,
-                        color: Colors.red,
-                      ),
+                      // _item(
+                      //   context,
+                      //   Icons.block,
+                      //   isBlocked ? "Unblock User" : "Block User",
+                      //   isBlocked ? onUnblock : onBlock,
+                      //   color: Colors.red,
+                      // ),
 
                       _item(
                         context,

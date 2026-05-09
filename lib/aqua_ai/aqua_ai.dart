@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive_flutter/hive_flutter.dart';
-
+import 'package:provider/provider.dart';
+import '../../provider/theme_provider.dart';
+import 'package:aqua_talk/provider/gradient_provider.dart';
 class AiChatScreen extends StatefulWidget {
+
   const AiChatScreen({super.key});
 
   @override
@@ -27,7 +30,7 @@ Reply clearly and use markdown formatting when needed.
 ''';
 
   // COLORS
- static const Color _bgColor = Color(0xFFB2DFDB);
+ 
 
 static const Color _appBarColor = Color(0xFF004D4D);
 
@@ -35,7 +38,7 @@ static const Color _bubbleUser = Color(0xFF006D6D);
 
 static const Color _bubbleAssistant = Color(0xFF34796E);
 
-static const Color _textAssistant = Color(0xFF123232);
+
 
 static const Color _sendBtn = Color(0xFF008080);
 
@@ -43,7 +46,7 @@ static const Color _sendBtn = Color(0xFF008080);
   void initState() {
     super.initState();
 
-    // ✅ BOX ALREADY OPENED IN main.dart
+  
     chatBox = Hive.box('chatBox');
 
     loadMessages();
@@ -160,7 +163,7 @@ static const Color _sendBtn = Color(0xFF008080);
     );
   }
 
-  // DELETE MESSAGE
+ 
   void showDeleteDialog(int index) {
     showDialog(
       context: context,
@@ -204,7 +207,7 @@ static const Color _sendBtn = Color(0xFF008080);
     );
   }
 
-  // CLEAR CHAT
+ 
   void clearChat() {
     showDialog(
       context: context,
@@ -248,7 +251,7 @@ static const Color _sendBtn = Color(0xFF008080);
     );
   }
 
-  // EMPTY STATE
+  
   Widget buildEmptyState() {
     return Center(
       child: Container(
@@ -261,13 +264,16 @@ static const Color _sendBtn = Color(0xFF008080);
           border:
               Border.all(color: Colors.white24),
         ),
-        child: const Column(
+        child:  Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.auto_awesome,
               size: 60,
-              color: _appBarColor,
+              color:
+              Theme.of(context).brightness == Brightness.dark
+    ? Colors.white
+    : _appBarColor,
             ),
             SizedBox(height: 12),
             Text(
@@ -275,14 +281,19 @@ static const Color _sendBtn = Color(0xFF008080);
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: _appBarColor,
+                color: 
+                Theme.of(context).brightness == Brightness.dark
+    ? Colors.white
+                :_appBarColor,
               ),
             ),
             SizedBox(height: 8),
             Text(
               "Your personal AI assistant",
               style: TextStyle(
-                color: _sendBtn,
+                color:Theme.of(context).brightness == Brightness.dark
+    ? Colors.white
+    : _sendBtn,
                 fontSize: 14,
               ),
             ),
@@ -329,7 +340,7 @@ static const Color _sendBtn = Color(0xFF008080);
               p: TextStyle(
                 color: isUser
                     ? Colors.white
-                    : _textAssistant,
+                    : Colors.white,
                 fontSize: 16,
               ),
             ),
@@ -348,8 +359,9 @@ static const Color _sendBtn = Color(0xFF008080);
 
   @override
   Widget build(BuildContext context) {
+     final theme = context.watch<ThemeProvider>();
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: _appBarColor,
         foregroundColor: Colors.white,
@@ -369,12 +381,21 @@ static const Color _sendBtn = Color(0xFF008080);
                     ? null
                     : clearChat,
             icon: const Icon(
-              Icons.delete_outline,
+              Icons.delete_outline, color: Colors.white,
             ),
           ),
         ],
       ),
-      body: Column(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
+      
+    child:  Column(
         children: [
           Expanded(
             child: messages.isEmpty
@@ -462,6 +483,7 @@ static const Color _sendBtn = Color(0xFF008080);
             ),
           ),
         ],
+      ),
       ),
     );
   }

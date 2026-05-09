@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../chats/chat_screen.dart';
-
+import 'package:provider/provider.dart';
+import '../../provider/theme_provider.dart';
+import 'package:aqua_talk/provider/gradient_provider.dart';
 class PhoneContactsScreen extends StatefulWidget {
   const PhoneContactsScreen({super.key});
 
@@ -108,7 +110,7 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
   // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
-
+final theme = context.watch<ThemeProvider>();
     final firebaseUsersFiltered = firebaseUsersList.where((user) {
      final name = (user['name'] ?? '').toString().toLowerCase();
     final phone = _normalizePhone(user['phone'] ?? '');
@@ -118,6 +120,7 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
     }).toList();
 
     return Scaffold(
+      
       appBar: AppBar(
         leading: const BackButton(),
         title: _isSearching
@@ -161,7 +164,17 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
                 ),
         ],
       ),
-      body: loading
+      body:Container(
+      width: double.infinity,
+      height: double.infinity,
+
+      decoration: BoxDecoration(
+        gradient: theme.isDark
+            ? GradientProvider.darkGradient
+            : GradientProvider.lightGradient,
+      ),
+
+      child:loading
     ? const Center(child: CircularProgressIndicator())
     : firebaseUsersFiltered.isEmpty
         ? const Center(child: Text('No users found'))
@@ -177,6 +190,7 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
               );
             },
           ),
+      ),
     );
   }
 
@@ -207,7 +221,7 @@ class _PhoneContactsScreenState extends State<PhoneContactsScreen> {
       leading: CircleAvatar(
         radius: 22,
         backgroundColor:
-            isRegistered ? Colors.teal.shade100 : const Color(0xFF627884),
+            isRegistered ? Color(0xFF0F3D3E) : const Color(0xFF627884),
         backgroundImage:
             profilePic.isNotEmpty ? NetworkImage(profilePic) : null,
         child: profilePic.isEmpty

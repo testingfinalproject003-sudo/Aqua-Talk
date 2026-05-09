@@ -21,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: GradientProvider.mainGradient,
+          gradient: GradientProvider.lightGradient,
         ),
 
         child: SafeArea(
