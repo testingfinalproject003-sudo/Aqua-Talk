@@ -317,21 +317,31 @@ class _AquaHomeScreenState extends State<AquaHomeScreen> {
                 ? darkTeal
                 : darkTeal,
             elevation: 4,
-            child: Icon(
-              Icons.message_rounded,
-                  
-              color: Colors.white,
-            ),
-            onPressed: () {
-          // ================== CHAT TAB ==================
-          if (currentIndex == 0) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const PhoneContactsScreen(),
-              ),
-            );
-          }
+             child: Icon(
+    currentIndex == 0 
+      ? Icons.message_rounded 
+      : Icons.camera_alt_outlined,
+    color: Colors.white,
+  ),
+  onPressed: () {
+    // ================== CHAT TAB ==================
+    if (currentIndex == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PhoneContactsScreen(),
+        ),
+      );
+    }
+    // ================== STORY TAB ==================
+   else if (currentIndex == 1) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const StoryScreen(), // Trigger camera
+    ),
+  );
+}
 
           
         },

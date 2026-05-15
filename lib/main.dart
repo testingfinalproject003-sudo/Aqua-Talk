@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -29,6 +32,22 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+// 1. Flutter Framework Errors (UI, Overflows etc.)
+  FlutterError.onError = (errorDetails) {
+    // Sirf error record hoga, app close nahi hogi
+    FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
+  };
+
+  // 2. Async/Platform Errors (Firebase, API, Database)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    // Non-fatal record karne ke liye
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
+    
+    // Debugging ke waqt VS Code console mein error dikhane ke liye
+    debugPrint("App Error: $error");
+    return false; // False rakhein taake console par red text nazar aaye
+  };
 
   await Hive.initFlutter();
   Hive.registerAdapter(AiMessageAdapter());

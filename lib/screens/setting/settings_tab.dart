@@ -7,13 +7,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:aqua_talk/provider/theme_provider.dart';
 import 'package:aqua_talk/services/user_service.dart';
-
 import 'package:aqua_talk/screens/setting/profile_screen.dart';
-
-
 import 'package:aqua_talk/screens/login/login_screen.dart';
+import 'package:aqua_talk/screens/setting/blocked_users_screen.dart';
+import 'package:aqua_talk/screens/setting/friends_management_screen.dart'; // NEW
+import 'package:aqua_talk/crash_test_screen.dart';
 
-import 'blocked_users_screen.dart'; // Add 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
 
@@ -23,11 +22,9 @@ class SettingsTab extends StatefulWidget {
 
 class _SettingsTabState extends State<SettingsTab> {
   final TextEditingController _searchController = TextEditingController();
-
   bool _isSearching = false;
   String _searchQuery = "";
 
-  // ================= NAVIGATION =================
   void _openScreen(Widget screen) {
     Navigator.push(
       context,
@@ -35,12 +32,9 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= LOGOUT =================
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
-
     if (!mounted) return;
-
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -52,19 +46,14 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
     final isDark = theme.isDark;
-
     final textTheme = Theme.of(context).textTheme;
-
     final bgColor = isDark ? Colors.black : const Color(0xFFB2DFDB);
 
     return Scaffold(
       backgroundColor: bgColor,
-
-      // ================= APPBAR =================
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-
         title: _isSearching
             ? _buildSearchField(context)
             : Text(
@@ -74,18 +63,15 @@ class _SettingsTabState extends State<SettingsTab> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-
         iconTheme: IconThemeData(
           color: isDark ? Colors.white : Colors.black,
         ),
-
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {
               setState(() {
                 _isSearching = !_isSearching;
-
                 if (!_isSearching) {
                   _searchQuery = "";
                   _searchController.clear();
@@ -95,8 +81,6 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         ],
       ),
-
-      // ================= BODY (OLD UI FIXED) =================
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -105,30 +89,31 @@ class _SettingsTabState extends State<SettingsTab> {
             _buildProfileHeader(context),
           ]),
 
-         
-
           _buildSectionTitle("Personalization", context),
 
           _buildGlassGroup(context, [
+            // ✅ NEW: Friends Management
             _buildSettingsTile(
-  Icons.block,
-  "Blocked Users",
-  "Manage blocked accounts",
-  () {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-
-    _openScreen(
-      BlockedUsersScreen(currentUserId: uid),
-    );
-  },
-  context,
-),
+              Icons.people,
+              "Friends",
+              "Manage friends and requests",
+              () => _openScreen(const FriendsManagementScreen()),
+              context,
+            ),
+            _buildDivider(context),
+            _buildSettingsTile(
+              Icons.block,
+              "Blocked Users",
+              "Manage blocked accounts",
+              () {
+                final uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid == null) return;
+                _openScreen(BlockedUsersScreen(currentUserId: uid));
+              },
+              context,
+            ),
             _buildDivider(context),
             _buildThemeSwitch(context),
-            
-           
-           
           ]),
 
           _buildSectionTitle("Session", context),
@@ -143,7 +128,19 @@ class _SettingsTabState extends State<SettingsTab> {
               isDanger: true,
             ),
           ]),
-
+          _buildDivider(context),
+          _buildSettingsTile(
+            Icons.bug_report,
+            "Crashlytics Test",
+            "Check app stability & error reporting",
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CrashTestScreen()),
+              );
+            },
+            context,
+          ),
           const SizedBox(height: 40),
           _buildFooterBranding(context),
           const SizedBox(height: 100),
@@ -152,12 +149,11 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= SEARCH FIELD FIX =================
   Widget _buildSearchField(BuildContext context) {
     return TextField(
       controller: _searchController,
       autofocus: true,
-      style:  TextStyle(color: Theme.of(context).textTheme.bodySmall?.color,),
+      style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
       onChanged: (val) {
         setState(() {
           _searchQuery = val.toLowerCase();
@@ -170,10 +166,8 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= GLASS UI (UNCHANGED) =================
   Widget _buildGlassGroup(BuildContext context, List<Widget> children) {
     final theme = context.watch<ThemeProvider>();
-
     return Container(
       decoration: BoxDecoration(
         color: theme.isDark
@@ -196,7 +190,6 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= TILE (FIX SEARCH BUG) =================
   Widget _buildSettingsTile(
     IconData icon,
     String title,
@@ -205,8 +198,6 @@ class _SettingsTabState extends State<SettingsTab> {
     BuildContext context, {
     bool isDanger = false,
   }) {
-
-    // ✅ FIX: isNotEmpty use (error fix)
     if (_isSearching &&
         _searchQuery.isNotEmpty &&
         !title.toLowerCase().contains(_searchQuery)) {
@@ -217,7 +208,7 @@ class _SettingsTabState extends State<SettingsTab> {
       onTap: onTap,
       leading: Icon(
         icon,
-        color:  Theme.of(context).textTheme.bodySmall?.color,
+        color: Theme.of(context).textTheme.bodySmall?.color,
       ),
       title: Text(
         title,
@@ -225,13 +216,13 @@ class _SettingsTabState extends State<SettingsTab> {
           fontWeight: FontWeight.bold,
           color: isDanger
               ? Colors.red
-              : ( Theme.of(context).textTheme.bodySmall?.color),
+              : (Theme.of(context).textTheme.bodySmall?.color),
         ),
       ),
       subtitle: Text(
         subtitle,
         style: TextStyle(
-          color:  Theme.of(context).textTheme.bodySmall?.color,
+          color: Theme.of(context).textTheme.bodySmall?.color,
         ),
       ),
     );
@@ -239,7 +230,6 @@ class _SettingsTabState extends State<SettingsTab> {
 
   Widget _buildThemeSwitch(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
-
     return SwitchListTile(
       title: Text(
         "Dark Mode",
@@ -251,8 +241,6 @@ class _SettingsTabState extends State<SettingsTab> {
       onChanged: (val) => theme.toggleTheme(),
     );
   }
-// ================== Block List ==================
-
 
   Widget _buildDivider(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
@@ -261,7 +249,6 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  // ================= PROFILE (FIXED LATER FIREBASE LINK READY) =================
   Widget _buildProfileHeader(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -328,13 +315,8 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  
-
   Widget _buildFooterBranding(BuildContext context) {
-    // final theme = context.watch<ThemeProvider>();
-
     return Column(
-      
       children: [
         Text("from",
             style: TextStyle(
@@ -348,8 +330,6 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Widget _buildSectionTitle(String title, BuildContext context) {
-    // final theme = context.watch<ThemeProvider>();
-
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 10),
       child: Text(

@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +12,7 @@ import 'message_bubble.dart';
 import 'shared_media_screen.dart';
 import '../setting/blocked_users_screen.dart';
 import 'user_profile_screen.dart';
+import '../../models/story_model.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-final Map<String, GlobalKey> _messageKeys = {};
+  final Map<String, GlobalKey> _messageKeys = {};
 
   bool isBlockedByCurrent = false;
   bool isBlockedByOther = false;
@@ -51,23 +51,53 @@ final Map<String, GlobalKey> _messageKeys = {};
   bool _isSearchMode = false;
 
   @override
+  void initState() {
+    super.initState();
+    _checkBlockStatus();
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
-void _scrollToMessage(String messageId) {
-  final key = _messageKeys[messageId];
 
-  if (key != null && key.currentContext != null) {
-    Scrollable.ensureVisible(
-      key.currentContext!,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      alignment: 0.3,
-    );
+  void _checkBlockStatus() {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.currentUserId)
+        .snapshots()
+        .listen((doc) {
+      if (!mounted) return;
+      final data = doc.data();
+      final blockedList = List<String>.from(data?['blockedUsers'] ?? []);
+      setState(() => isBlockedByCurrent = blockedList.contains(widget.userId));
+    });
+
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .snapshots()
+        .listen((doc) {
+      if (!mounted) return;
+      final data = doc.data();
+      final blockedList = List<String>.from(data?['blockedUsers'] ?? []);
+      setState(() => isBlockedByOther = blockedList.contains(widget.currentUserId));
+    });
   }
-}
+
+  void _scrollToMessage(String messageId) {
+    final key = _messageKeys[messageId];
+    if (key != null && key.currentContext != null) {
+      Scrollable.ensureVisible(
+        key.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.3,
+      );
+    }
+  }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
@@ -81,75 +111,58 @@ void _scrollToMessage(String messageId) {
     return "${d.hour}:${d.minute.toString().padLeft(2, '0')}";
   }
 
-  // ✅ PINNED MESSAGE BANNER: AppBar ke neeche
   Widget _buildPinnedMessageBanner(Map<String, dynamic> pinnedData) {
-  return GestureDetector(
-    onTap: () {
-      final messageId = pinnedData['messageId'];
-
-      if (messageId != null) {
-        _scrollToMessage(messageId);
-      }
-    },
-    child: Container(
-      width: double.infinity,
-      color: const Color(0xFF004D40).withValues(alpha: 0.95),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          const Icon(Icons.push_pin,
-              color: Color(0xFF80CBC4), size: 18),
-          const SizedBox(width: 10),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Pinned Message',
-                  style: TextStyle(
-                    color: Color(0xFF80CBC4),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: () {
+        final messageId = pinnedData['messageId'];
+        if (messageId != null) _scrollToMessage(messageId);
+      },
+      child: Container(
+        width: double.infinity,
+        color: const Color(0xFF004D40).withValues(alpha: 0.95),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.push_pin, color: Color(0xFF80CBC4), size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Pinned Message',
+                    style: TextStyle(
+                      color: Color(0xFF80CBC4),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 2),
-
-                Text(
-                  pinnedData['text']?.toString() ?? 'Media message',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
+                  const SizedBox(height: 2),
+                  Text(
+                    pinnedData['text']?.toString() ?? 'Media message',
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          IconButton(
-            icon: const Icon(
-              Icons.close,
-              color: Colors.white70,
-              size: 18,
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.white70, size: 18),
+              onPressed: () async {
+                await context.read<ChatProvider>().togglePinMessage(
+                  chatId: widget.chatId,
+                  messageId: pinnedData['messageId'] ?? '',
+                  isPinned: true,
+                );
+              },
             ),
-            onPressed: () async {
-              await context.read<ChatProvider>().togglePinMessage(
-                    chatId: widget.chatId,
-                    messageId: pinnedData['messageId'] ?? '',
-                    isPinned: true,
-                  );
-            },
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  // ✅ DARK TEAL APPBAR
   PreferredSizeWidget _buildAppBar({required bool hasSelection}) {
     final selection = context.watch<ChatSelectionProvider>();
 
@@ -158,8 +171,7 @@ void _scrollToMessage(String messageId) {
         backgroundColor: const Color(0xFF004D4D),
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () =>
-              context.read<ChatSelectionProvider>().clearSelection(),
+          onPressed: () => context.read<ChatSelectionProvider>().clearSelection(),
         ),
         title: Text(
           '${selection.selectedMessages.length} selected',
@@ -170,7 +182,6 @@ void _scrollToMessage(String messageId) {
             icon: const Icon(Icons.delete, color: Colors.white),
             onPressed: _showDeleteDialog,
           ),
-          // ✅ PIN/UNPIN TOGGLE
           FutureBuilder<QuerySnapshot>(
             future: FirebaseFirestore.instance
                 .collection('chats')
@@ -180,10 +191,8 @@ void _scrollToMessage(String messageId) {
                 .get(),
             builder: (context, snap) {
               if (!snap.hasData) return const SizedBox();
-              
-              final isPinned = snap.data!.docs.isNotEmpty && 
+              final isPinned = snap.data!.docs.isNotEmpty &&
                   (snap.data!.docs.first['isPinned'] ?? false) == true;
-              
               return IconButton(
                 icon: Icon(
                   isPinned ? Icons.push_pin_outlined : Icons.push_pin,
@@ -237,9 +246,7 @@ void _scrollToMessage(String messageId) {
                     ),
                   );
                 }
-
                 final userData = userSnap.data!.data() as Map<String, dynamic>;
-
                 return StreamBuilder<DocumentSnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('users')
@@ -249,13 +256,11 @@ void _scrollToMessage(String messageId) {
                       .snapshots(),
                   builder: (context, contactSnap) {
                     String displayName = userData['name'] ?? widget.userName;
-
                     if (contactSnap.hasData && contactSnap.data!.exists) {
                       final contactData =
                           contactSnap.data!.data() as Map<String, dynamic>;
                       displayName = contactData['customName'] ?? displayName;
                     }
-
                     return Text(
                       displayName,
                       style: const TextStyle(
@@ -291,10 +296,8 @@ void _scrollToMessage(String messageId) {
           chatId: widget.chatId,
           blockedUserId: widget.userId,
         );
-
         if (!mounted) return;
-        setState(() {});
-        isBlockedByCurrent = false;
+        setState(() => isBlockedByCurrent = false);
       },
       onViewContact: () {
         Navigator.push(
@@ -334,6 +337,13 @@ void _scrollToMessage(String messageId) {
   }
 
   Future<void> _showGalleryPicker() async {
+    if (isBlockedByCurrent || isBlockedByOther) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot send media while user is blocked.')),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -391,6 +401,13 @@ void _scrollToMessage(String messageId) {
   }
 
   Future<void> _pickMedia(ImageSource source, bool isVideo) async {
+    if (isBlockedByCurrent || isBlockedByOther) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot send media while user is blocked.')),
+      );
+      return;
+    }
+
     final messenger = ScaffoldMessenger.of(context);
     final chatProvider = context.read<ChatProvider>();
     final pickedFile = isVideo
@@ -434,6 +451,7 @@ void _scrollToMessage(String messageId) {
                   blockedUserId: widget.userId,
                 );
                 if (!mounted) return;
+                setState(() => isBlockedByCurrent = true);
                 navigator.push(
                   MaterialPageRoute(
                     builder: (_) =>
@@ -610,8 +628,6 @@ void _scrollToMessage(String messageId) {
     );
   }
 
-  // ❌ REMOVED: _showMessageReactionBar - ab MessageBubble mein handle hota hai
-
   Future<void> _deleteSelectionForMe() async {
     final selection = context.read<ChatSelectionProvider>();
     for (var messageId in selection.selectedMessages) {
@@ -713,26 +729,50 @@ void _scrollToMessage(String messageId) {
             Container(
               width: double.infinity,
               color: Colors.red.shade800,
-              padding: const EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 16,
-              ),
-              child: const Text(
-                'You blocked this user.',
-                style: TextStyle(color: Colors.white),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.block, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'You blocked this user. Unblock to send messages.',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      await context.read<ChatProvider>().unblockUser(
+                        chatId: widget.chatId,
+                        blockedUserId: widget.userId,
+                      );
+                      if (!mounted) return;
+                      setState(() => isBlockedByCurrent = false);
+                    },
+                    child: const Text(
+                      'Unblock',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
             ),
           if (isBlockedByOther)
             Container(
               width: double.infinity,
               color: Colors.orange.shade800,
-              padding: const EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 16,
-              ),
-              child: const Text(
-                'You are blocked by this user.',
-                style: TextStyle(color: Colors.white),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              child: const Row(
+                children: [
+                  Icon(Icons.block, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'You are blocked by this user. Cannot send messages.',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
             ),
           Expanded(
@@ -750,13 +790,11 @@ void _scrollToMessage(String messageId) {
 
                 if (_searchQuery.isNotEmpty) {
                   docs = docs.where((doc) {
-                    final text =
-                        doc['text']?.toString().toLowerCase() ?? '';
+                    final text = doc['text']?.toString().toLowerCase() ?? '';
                     return text.contains(_searchQuery.toLowerCase());
                   }).toList();
                 }
 
-                // Find pinned message for banner
                 Map<String, dynamic>? pinnedMessageData;
                 final pinnedDocs = docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
@@ -784,81 +822,75 @@ void _scrollToMessage(String messageId) {
                       _buildPinnedMessageBanner(pinnedMessageData),
                     Expanded(
                       child: ListView.builder(
-  controller: _scrollController,
-  itemCount: docs.length,
-  itemBuilder: (_, i) {
-    final document = docs[i];
+                        controller: _scrollController,
+                        itemCount: docs.length,
+                        itemBuilder: (_, i) {
+                          final document = docs[i];
+                          final data = (document.data() as Map<String, dynamic>?) ?? {};
+                          final isMe = data['senderId'] == widget.currentUserId;
+                          final currentReactions = Map<String, List<dynamic>>.from(
+                            data['reactions'] ?? {},
+                          );
+                          final type = data['type']?.toString() ?? 'text';
+                          final messageText = type == 'audio'
+                              ? 'Audio message unavailable'
+                              : data['text']?.toString() ?? '';
+                          final messageId = document.id;
+                          _messageKeys.putIfAbsent(messageId, () => GlobalKey());
 
-    final data =
-        (document.data() as Map<String, dynamic>?) ?? {};
+                          // ✅ STORY REPLY DATA
+                          final storyReplyData = data['storyReply'] as Map<String, dynamic>?;
 
-    final isMe =
-        data['senderId'] == widget.currentUserId;
-
-    final currentReactions =
-        Map<String, List<dynamic>>.from(
-      data['reactions'] ?? {},
-    );
-
-    final type =
-        data['type']?.toString() ?? 'text';
-
-    final messageText = type == 'audio'
-        ? 'Audio message unavailable'
-        : data['text']?.toString() ?? '';
-
-    // ✅ ADD THIS
-    final messageId = document.id;
-
-    _messageKeys.putIfAbsent(
-      messageId,
-      () => GlobalKey(),
-    );
-
-    // ✅ WRAP WITH CONTAINER
-    return Container(
-      key: _messageKeys[messageId],
-
-      child: MessageBubble(
-                            text: messageText,
-                            isMe: isMe,
-                            time: _format(data['timestamp']),
-                            chatId: widget.chatId,
-                            messageId: document.id,
-                            currentUserId: widget.currentUserId,
-                            reactions: currentReactions,
-                            isEdited: data['isEdited'] ?? false,
-                            isPinned: data['isPinned'] ?? false,
-                            isStarred: false,
-                            replyText: data['replyText']?.toString(),
-                            highlightQuery: _searchQuery,
-                            image: data['image']?.toString(),
-                            videoUrl: data['videoUrl']?.toString(),
-                            onSwipeReply: () {
-                              setState(() {
-                                _replyText = data['text']?.toString();
-                                _replyId = document.id;
-                              });
-                            },
-                            // ✅ FIXED: onReact callback pass karo
-                            onReact: (emoji) async {
-                              if (!mounted) return;
-                              await context.read<ChatProvider>().toggleReaction(
-                                chatId: widget.chatId,
-                                messageId: document.id,
-                                emoji: emoji,
-                                uid: widget.currentUserId,
-                              );
-                            },
-                            onDoubleTap: () async {
-                              await context.read<ChatProvider>().toggleReaction(
-                                chatId: widget.chatId,
-                                messageId: document.id,
-                                emoji: '❤️',
-                                uid: widget.currentUserId,
-                              );
-                            },
-      ),
+                          return Container(
+                            key: _messageKeys[messageId],
+                            child: MessageBubble(
+                              text: messageText,
+                              isMe: isMe,
+                              time: _format(data['timestamp']),
+                              chatId: widget.chatId,
+                              messageId: document.id,
+                              currentUserId: widget.currentUserId,
+                              reactions: currentReactions,
+                              isEdited: data['isEdited'] ?? false,
+                              isPinned: data['isPinned'] ?? false,
+                              isStarred: false,
+                              replyText: data['replyText']?.toString(),
+                              highlightQuery: _searchQuery,
+                              image: data['image']?.toString(),
+                              videoUrl: data['videoUrl']?.toString(),
+                              // ✅ NEW: Story reply data
+                              storyReply: storyReplyData != null
+                                  ? StoryReply(
+                                      storyId: storyReplyData['storyId'] ?? '',
+                                      storyOwnerId: storyReplyData['storyOwnerId'] ?? '',
+                                      storyImageUrl: storyReplyData['storyImageUrl'] ?? '',
+                                      replyText: storyReplyData['replyText'] ?? '',
+                                    )
+                                  : null,
+                              onSwipeReply: () {
+                                setState(() {
+                                  _replyText = data['text']?.toString();
+                                  _replyId = document.id;
+                                });
+                              },
+                              onReact: (emoji) async {
+                                if (!mounted) return;
+                                await context.read<ChatProvider>().toggleReaction(
+                                  chatId: widget.chatId,
+                                  messageId: document.id,
+                                  emoji: emoji,
+                                  uid: widget.currentUserId,
+                                );
+                              },
+                              onDoubleTap: () async {
+                                await context.read<ChatProvider>().toggleReaction(
+                                  chatId: widget.chatId,
+                                  messageId: document.id,
+                                  emoji: '❤️',
+                                  uid: widget.currentUserId,
+                                );
+                              },
+                            ),
                           );
                         },
                       ),
@@ -887,51 +919,86 @@ void _scrollToMessage(String messageId) {
                 ],
               ),
             ),
-          InputBar(
-            chatId: widget.chatId,
-            currentUserId: widget.currentUserId,
-            receiverId: widget.userId,
-            onSend: (text) async {
-              if (text.trim().isEmpty) return;
-              if (isBlockedByOther) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Cannot send message while blocked.'),
+          if (isBlockedByCurrent || isBlockedByOther)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: Colors.grey.shade800,
+              child: Row(
+                children: [
+                  Icon(Icons.block, color: Colors.red.shade300, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      isBlockedByCurrent
+                          ? 'You blocked this user. Unblock to chat.'
+                          : 'You are blocked by this user.',
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
+                  if (isBlockedByCurrent)
+                    TextButton(
+                      onPressed: () async {
+                        await context.read<ChatProvider>().unblockUser(
+                          chatId: widget.chatId,
+                          blockedUserId: widget.userId,
+                        );
+                        if (!mounted) return;
+                        setState(() => isBlockedByCurrent = false);
+                      },
+                      child: const Text('Unblock'),
+                    ),
+                ],
+              ),
+            )
+          else
+            InputBar(
+              chatId: widget.chatId,
+              currentUserId: widget.currentUserId,
+              receiverId: widget.userId,
+              onSend: (text) async {
+                if (isBlockedByCurrent || isBlockedByOther) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Cannot send message while blocked.'),
+                    ),
+                  );
+                  return;
+                }
+                if (text.trim().isEmpty) return;
+
+                await context.read<ChatProvider>().setTyping(
+                  chatId: widget.chatId,
+                  uid: widget.currentUserId,
+                  isTyping: false,
                 );
-                return;
-              }
+                if (!context.mounted) return;
+                await context.read<ChatProvider>().sendMessage(
+                  chatId: widget.chatId,
+                  text: text,
+                  senderId: widget.currentUserId,
+                  receiverId: widget.userId,
+                  replyTo: _replyId,
+                  replyText: _replyText,
+                );
 
-              await context.read<ChatProvider>().setTyping(
-                chatId: widget.chatId,
-                uid: widget.currentUserId,
-                isTyping: false,
-              );
-              if (!context.mounted) return;
-              await context.read<ChatProvider>().sendMessage(
-                chatId: widget.chatId,
-                text: text,
-                senderId: widget.currentUserId,
-                receiverId: widget.userId,
-                replyTo: _replyId,
-                replyText: _replyText,
-              );
-
-              if (!context.mounted) return;
-              setState(() {
-                _replyText = null;
-                _replyId = null;
-              });
-            },
-            onTyping: (typing) async {
-              await context.read<ChatProvider>().setTyping(
-                chatId: widget.chatId,
-                uid: widget.currentUserId,
-                isTyping: typing,
-              );
-            },
-            onAttachmentTap: _showGalleryPicker,
-          ),
+                if (!context.mounted) return;
+                setState(() {
+                  _replyText = null;
+                  _replyId = null;
+                });
+              },
+              onTyping: (typing) async {
+                await context.read<ChatProvider>().setTyping(
+                  chatId: widget.chatId,
+                  uid: widget.currentUserId,
+                  isTyping: typing,
+                );
+              },
+              onAttachmentTap: _showGalleryPicker,
+            ),
         ],
       ),
     );

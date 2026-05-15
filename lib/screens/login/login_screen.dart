@@ -1,6 +1,6 @@
 import 'dart:ui'; // For glass effect
 import 'dart:developer';
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // 🔥 Firebase Import
@@ -17,7 +17,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController phoneController = TextEditingController(
-    text: kDebugMode ? "03427247905" : ""
+    
   );
   final FirebaseAuth _auth = FirebaseAuth.instance; // 🔥 Auth Instance
 

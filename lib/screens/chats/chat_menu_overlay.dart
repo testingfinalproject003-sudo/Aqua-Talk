@@ -7,16 +7,14 @@ class ChatMenuOverlay {
     required String chatId,
     required String userId,
     required String currentUserId,
-    required bool isBlocked, // 🔥 ADD THIS
+    required bool isBlocked,
     required VoidCallback onViewContact,
     required VoidCallback onSearch,
     required VoidCallback onMedia,
-    
     required VoidCallback onGallery,
     required VoidCallback onBlock,
     required VoidCallback onUnblock,
     required VoidCallback onClearChat,
-    
   }) {
     showDialog(
       context: context,
@@ -40,23 +38,19 @@ class ChatMenuOverlay {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-
                       _item(context, Icons.person, "View Contact", onViewContact),
                       _item(context, Icons.search, "Search Chat", onSearch),
                       _item(context, Icons.perm_media, "Media / Links", onMedia),
-                      
                       _item(context, Icons.image, "Gallery", onGallery),
-
                       const Divider(color: Colors.white30),
-                      // 🔥 BLOCK / UNBLOCK FIXED
-                      // _item(
-                      //   context,
-                      //   Icons.block,
-                      //   isBlocked ? "Unblock User" : "Block User",
-                      //   isBlocked ? onUnblock : onBlock,
-                      //   color: Colors.red,
-                      // ),
-
+                      // ✅ BLOCK / UNBLOCK - Dynamic based on isBlocked
+                      _item(
+                        context,
+                        isBlocked ? Icons.lock_open : Icons.block,
+                        isBlocked ? "Unblock User" : "Block User",
+                        isBlocked ? onUnblock : onBlock,
+                        color: isBlocked ? Colors.green : Colors.red,
+                      ),
                       _item(
                         context,
                         Icons.delete,
