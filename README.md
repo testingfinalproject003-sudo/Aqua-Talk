@@ -132,6 +132,37 @@ lib/
 └── generated/                         # Auto-generated files
     └── assets.dart                    # Asset paths (flutter_gen)
 
+
+## Packages Used:
+  > cupertino_icons: ^1.0.8
+  > assets: ^0.0.2
+  > provider: ^6.1.5+1
+  > intl: ^0.20.2
+  > uuid: ^4.5.3
+  > glassmorphism: ^3.0.0
+  > animations: ^2.1.2
+  > image_picker: ^1.2.1
+  > emoji_picker_flutter: ^4.4.0
+  > shared_preferences: ^2.5.5
+  > flutterfire_cli: ^0.1.1+2
+  > firebase_core: ^4.7.0
+  > firebase_auth: ^6.4.0
+  > cloud_firestore: ^6.3.0
+  > flutter_keyboard_visibility: ^6.0.0
+  > rxdart: ^0.28.0
+  > path_provider: ^2.0.15 # New ADDED
+  > firebase_storage: ^13.3.0 # New ADDED
+  > flutter_contacts: ^2.0.2 # New ADDED
+  > permission_handler: ^12.0.1 # New ADDED
+  > http: ^1.6.0
+  > hive: ^2.2.3
+  > hive_flutter: ^1.1.0
+  > hive_generator: ^2.0.1
+  > build_runner: ^2.4.13
+  > flutter_markdown: ^0.7.7+1
+  > firebase_crashlytics: ^5.2.1
+  
+
     
  ![Splash](assets/screenshots/) 
  ![Signup](assets/screenshots/) 
