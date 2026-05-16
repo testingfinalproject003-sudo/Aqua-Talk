@@ -151,7 +151,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                               width: 40,
                               height: 40,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(
+                              errorBuilder: (_, __, ___) => Container(
                                 width: 40,
                                 height: 40,
                                 color: Colors.grey,
@@ -243,7 +243,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 width: 200,
                                 height: 200,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => const Icon(
+                                errorBuilder: (_, __, ___) => const Icon(
                                   Icons.videocam,
                                   color: Colors.white,
                                   size: 50,
