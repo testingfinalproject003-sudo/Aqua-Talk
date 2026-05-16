@@ -128,7 +128,7 @@ Future<void> _unblockUser(String blockedUserId) async {
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: users.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                separatorBuilder: (_,__) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final userDoc = users[index];
                   final blockedUser =

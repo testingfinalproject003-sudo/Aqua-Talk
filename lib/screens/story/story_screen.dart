@@ -870,7 +870,7 @@ class _CaptionScreenState extends State<_CaptionScreen> {
                 : Image.network(
                     widget.mediaPath,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => Image.file(
+                    errorBuilder: (_, __, ___) => Image.file(
                       File(widget.mediaPath),
                       fit: BoxFit.contain,
                     ),
