@@ -192,11 +192,13 @@ lib/
   
 
     
- ![Splash](assets/screenshots/) 
- ![Signup](assets/screenshots/) 
- ![Login](assets/screenshots/) 
- ![Home](assets/screenshots/) 
- ![Home](assets/screenshots/) 
- ![Library](assets/screenshots/)  
- ![Progress](assets/screenshots/) 
- ![Profile](assets/screenshots/) 
+ ![Splash](assets/screenshots/splash.jpeg) 
+ ![Login](assets/screenshots/login.jpeg) 
+ ![OTP](assets/screenshots/otp.jpeg) 
+ ![Home](assets/screenshots/home.jpeg) 
+ ![Story](assets/screenshots/story.jpeg) 
+ ![Setting](assets/screenshots/setting.jpeg)  
+ ![Dark Theme](assets/screenshots/darkhome.jpeg) 
+ ![Ai chat](assets/screenshots/ai.jpeg) 
+ ![chat](assets/screenshots/chat.jpeg) 
+ ![Reaction](assets/screenshots/reaction.jpeg) 

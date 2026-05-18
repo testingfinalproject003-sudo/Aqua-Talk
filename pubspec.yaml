@@ -101,6 +101,16 @@ flutter:
     - assets/images/bg.png.jpeg
     - assets/images/bs.png.jpeg
     - assets/icon/aqua_icon.png
+    - assets/screenshots/splash.jpeg
+    - assets/screenshots/login.jpeg
+    - assets/screenshots/otp.jpeg
+    - assets/screenshots/home.jpeg
+    - assets/screenshots/story.jpeg
+    - assets/screenshots/setting.jpeg
+    - assets/screenshots/darkhome.jpeg
+    - assets/screenshots/ai.jpeg
+    - assets/screenshots/chat.jpeg
+    - assets/screenshots/reaction.jpeg
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
