@@ -70,7 +70,9 @@ A modern, real-time messaging and social status-sharing Flutter application buil
  - firebase_crashlytics: ^5.2.1
 
 
-# Aqua Talk Structure
+## Aqua Talk Structure
+
+```
 lib/
 ├── main.dart                          # App entry point & MultiProvider setup
 │
@@ -168,7 +170,7 @@ lib/
 └── generated/                         # Auto-generated files
     └── assets.dart                    # Asset paths (flutter_gen)
 
-
+============
 ## Packages Used:
   - cupertino_icons: ^1.0.8
   - assets: ^0.0.2
