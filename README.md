@@ -200,7 +200,7 @@ lib/
   - flutter_markdown: ^0.7.7+1
   - firebase_crashlytics: ^5.2.1
   
-
+====================================================
     
  ![Splash](assets/screenshots/splash.jpeg) 
  ![Login](assets/screenshots/login.jpeg) 
