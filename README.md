@@ -171,6 +171,7 @@ lib/
     └── assets.dart                    # Asset paths (flutter_gen)
 
 ============
+```
 ## Packages Used:
   - cupertino_icons: ^1.0.8
   - assets: ^0.0.2
@@ -199,9 +200,10 @@ lib/
   - build_runner: ^2.4.13
   - flutter_markdown: ^0.7.7+1
   - firebase_crashlytics: ^5.2.1
-  
-====================================================
-    
+
+_______________________________________________
+
+
  ![Splash](assets/screenshots/splash.jpeg) 
  ![Login](assets/screenshots/login.jpeg) 
  ![OTP](assets/screenshots/otp.jpeg) 
